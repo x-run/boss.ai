@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>boss.ai — ブリーフ作成</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    body {
+      background: #050505;
+    }
+    /* noise */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+    }
+    /* scrollbar */
+    .scroll-area::-webkit-scrollbar { width: 5px; }
+    .scroll-area::-webkit-scrollbar-track { background: transparent; }
+    .scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 9999px; }
+    .scroll-area::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+    /* chip interaction */
+    .chip {
+      transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+                  background 0.18s, border-color 0.18s, box-shadow 0.18s, color 0.18s;
+    }
+    .chip:hover:not(:disabled) { transform: translateY(-2px); }
+    .chip:active:not(:disabled) { transform: scale(0.94) translateY(0); }
+
+    /* message slide-in */
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-anim { animation: msgIn 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+
+    /* typing dots */
+    @keyframes dotBounce {
+      0%,60%,100% { transform: translateY(0); opacity: 0.35; }
+      30%         { transform: translateY(-5px); opacity: 1; }
+    }
+    .dot { animation: dotBounce 1.2s infinite; }
+
+    /* progress bar */
+    .bar-fill { transition: width 0.5s cubic-bezier(0.16,1,0.3,1); }
+
+    /* brief value pop */
+    @keyframes valuePop {
+      0%   { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .value-pop { animation: valuePop 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+  </style>
+</head>
+
+<body class="h-full text-white font-sans antialiased overflow-hidden">
+<div x-data="briefApp()" x-init="boot()" class="h-full flex flex-col">
+
+  <!-- ═══ NAV ═══ -->
+  <nav class="flex-shrink-0 h-14 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-xl z-40 flex items-center px-4 sm:px-6">
+    <div class="flex items-center gap-3 mr-auto">
+      <a href="index.html" class="text-[15px] font-extrabold tracking-tight leading-none">boss<span class="text-neutral-600">.ai</span></a>
+      <span class="text-neutral-800">|</span>
+      <span class="text-[11px] font-medium text-neutral-500 tracking-wide">ブリーフ作成</span>
+    </div>
+    <!-- progress -->
+    <div class="flex items-center gap-3">
+      <span class="text-[11px] font-mono text-neutral-600" x-text="completeness + '%'"></span>
+      <div class="w-24 sm:w-32 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+        <div class="bar-fill h-full rounded-full bg-emerald-500" :style="`width:${completeness}%`"></div>
+      </div>
+      <button
+        @click="if(confirm('ブリーフをリセットしますか？')) reset()"
+        class="ml-1 text-[11px] text-neutral-700 hover:text-red-400 transition-colors"
+      >リセット</button>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- ── CHAT COLUMN ── -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- messages -->
+      <div id="chat-scroll" class="flex-1 overflow-y-auto scroll-area px-4 sm:px-6 py-6">
+        <div class="max-w-2xl mx-auto">
+
+          <template x-for="(msg, mi) in messages" :key="msg.id">
+            <div class="msg-anim" :style="`animation-delay:${msg._fresh ? '0s' : '0s'}`">
+
+              <!-- ── AI bubble ── -->
+              <template x-if="msg.role === 'ai'">
+                <div class="flex gap-3 mb-5">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-emerald-400 text-[10px] font-bold font-mono">AI</span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="inline-block bg-white/[0.035] border border-white/[0.06] rounded-2xl rounded-tl-md px-4 py-3 max-w-lg">
+                      <p class="text-[14px] text-neutral-300 leading-[1.75] whitespace-pre-line" x-text="msg.text"></p>
+                    </div>
+
+                    <!-- ▸ OPTIONS (single / multi) ── shown only while unanswered -->
+                    <div x-show="msg.type === 'options' && !msg.answered" class="mt-3 max-w-lg">
+                      <div class="flex flex-wrap gap-2">
+                        <template x-for="opt in (msg.options || [])" :key="opt.value">
+                          <button
+                            @click="msg.multi ? toggleTone(opt.value) : pickSingle(msg, opt)"
+                            class="chip inline-flex items-center gap-1.5 px-4 py-[9px] rounded-full text-[13px] font-medium border cursor-pointer
+                                   focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-1 focus:ring-offset-[#050505]"
+                            :class="msg.multi && pendingTones.includes(opt.value)
+                              ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300 shadow-lg shadow-emerald-500/10'
+                              : 'bg-white/[0.025] border-white/[0.07] text-neutral-400 hover:bg-white/[0.07] hover:border-white/[0.14] hover:text-white hover:shadow-lg hover:shadow-white/[0.02]'"
+                          >
+                            <svg x-show="msg.multi && pendingTones.includes(opt.value)" x-transition.scale class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <span x-text="opt.label"></span>
+                          </button>
+                        </template>
+
+                        <!-- custom duration -->
+                        <template x-if="msg.customInput === 'duration'">
+                          <span class="contents">
+                            <button
+                              x-show="!showCustomDuration"
+                              @click="showCustomDuration = true"
+                              class="chip px-4 py-[9px] rounded-full text-[13px] font-medium border border-dashed
+                                     bg-white/[0.015] border-white/[0.07] text-neutral-500
+                                     hover:bg-white/[0.06] hover:border-white/[0.14] hover:text-white
+                                     focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-1 focus:ring-offset-[#050505]"
+                            >カスタム</button>
+                            <span x-show="showCustomDuration" x-transition class="inline-flex items-center gap-1.5">
+                              <input
+                                type="number" min="1" x-model="customDuration"
+                                @keydown.enter.prevent="submitCustomDuration(msg)"
+                                placeholder="秒"
+                                class="w-[72px] px-3 py-[7px] rounded-full text-[13px] bg-white/[0.04] border border-white/[0.1]
+                                       text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/40"
+                              />
+                              <button @click="submitCustomDuration(msg)"
+                                class="px-3 py-[7px] rounded-full text-[12px] font-semibold bg-emerald-500/20 text-emerald-400
+                                       border border-emerald-500/20 hover:bg-emerald-500/30 transition-colors"
+                              >決定</button>
+                            </span>
+                          </span>
+                        </template>
+
+                        <!-- other target -->
+                        <template x-if="msg.customInput === 'target'">
+                          <span class="contents">
+                            <button
+                              x-show="!showOtherTarget"
+                              @click="showOtherTarget = true"
+                              class="chip px-4 py-[9px] rounded-full text-[13px] font-medium border border-dashed
+                                     bg-white/[0.015] border-white/[0.07] text-neutral-500
+                                     hover:bg-white/[0.06] hover:border-white/[0.14] hover:text-white
+                                     focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-1 focus:ring-offset-[#050505]"
+                            >その他</button>
+                            <span x-show="showOtherTarget" x-transition class="inline-flex items-center gap-1.5">
+                              <input
+                                type="text" x-model="otherTarget"
+                                @keydown.enter.prevent="submitOtherTarget(msg)"
+                                placeholder="ターゲットを入力"
+                                class="w-[140px] px-3 py-[7px] rounded-full text-[13px] bg-white/[0.04] border border-white/[0.1]
+                                       text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/40"
+                              />
+                              <button @click="submitOtherTarget(msg)"
+                                class="px-3 py-[7px] rounded-full text-[12px] font-semibold bg-emerald-500/20 text-emerald-400
+                                       border border-emerald-500/20 hover:bg-emerald-500/30 transition-colors"
+                              >決定</button>
+                            </span>
+                          </span>
+                        </template>
+                      </div>
+
+                      <!-- multi-select confirm -->
+                      <div x-show="msg.multi" class="mt-3">
+                        <button
+                          @click="confirmTones(msg)"
+                          :disabled="pendingTones.length === 0"
+                          class="chip inline-flex items-center gap-2 px-5 py-[9px] rounded-full text-[13px] font-semibold border transition-colors"
+                          :class="pendingTones.length
+                            ? 'bg-white text-black border-white hover:shadow-lg hover:shadow-white/[0.08]'
+                            : 'bg-white/[0.025] text-neutral-700 border-white/[0.05] cursor-not-allowed'"
+                        >
+                          <span x-text="pendingTones.length ? pendingTones.length + '件選択中 — 確定する' : 'トーンを選択してください'"></span>
+                          <svg x-show="pendingTones.length" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- ── USER bubble ── -->
+              <template x-if="msg.role === 'user'">
+                <div class="flex justify-end mb-5">
+                  <div class="inline-block bg-emerald-500/[0.10] border border-emerald-500/[0.13] rounded-2xl rounded-tr-md px-4 py-3 max-w-sm">
+                    <p class="text-[14px] text-emerald-100 leading-[1.7]" x-text="msg.text"></p>
+                  </div>
+                </div>
+              </template>
+
+            </div>
+          </template>
+
+          <!-- typing -->
+          <div x-show="typing" x-transition.opacity.duration.200ms class="flex gap-3 mb-5">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+              <span class="text-emerald-400 text-[10px] font-bold font-mono">AI</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 bg-white/[0.035] border border-white/[0.06] rounded-2xl rounded-tl-md px-4 py-3">
+              <span class="dot w-[5px] h-[5px] rounded-full bg-neutral-500" style="animation-delay:0s"></span>
+              <span class="dot w-[5px] h-[5px] rounded-full bg-neutral-500" style="animation-delay:0.2s"></span>
+              <span class="dot w-[5px] h-[5px] rounded-full bg-neutral-500" style="animation-delay:0.4s"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── TEXT INPUT ── -->
+      <div
+        x-show="showTextInput && !done"
+        x-transition.opacity.duration.200ms
+        class="flex-shrink-0 border-t border-white/[0.06] px-4 sm:px-6 py-4"
+      >
+        <form @submit.prevent="submitText()" class="max-w-2xl mx-auto flex gap-3">
+          <input
+            type="text" x-model="inputText" x-ref="textInput"
+            :placeholder="textPlaceholder"
+            class="flex-1 px-4 py-3 rounded-xl text-[14px] bg-white/[0.035] border border-white/[0.07]
+                   text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/40
+                   focus:ring-1 focus:ring-emerald-500/20 transition"
+          />
+          <button
+            type="submit" :disabled="!inputText.trim()"
+            class="px-5 py-3 rounded-xl text-[13px] font-semibold transition-all"
+            :class="inputText.trim()
+              ? 'bg-white text-black hover:shadow-lg hover:shadow-white/[0.06]'
+              : 'bg-white/[0.04] text-neutral-700 cursor-not-allowed'"
+          >送信</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── BRIEF PANEL ── -->
+    <!-- mobile backdrop -->
+    <div
+      x-show="mobilePanel" x-transition.opacity.duration.200ms
+      @click="mobilePanel = false"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
+    ></div>
+
+    <aside
+      class="fixed right-0 top-14 bottom-0 w-[340px] sm:w-[380px] z-40
+             bg-[#080808] border-l border-white/[0.06]
+             transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+             lg:relative lg:top-0 lg:z-auto lg:translate-x-0"
+      :class="mobilePanel ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'"
+    >
+      <div class="h-full flex flex-col">
+        <div class="flex items-center justify-between px-6 pt-6 pb-4">
+          <h2 class="text-sm font-semibold tracking-tight">制作ブリーフ</h2>
+          <span class="text-[10px] font-mono text-neutral-600 tracking-wider" x-text="completeness + '% 完成'"></span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto scroll-area px-6 pb-6">
+          <div class="space-y-5">
+
+            <!-- purpose -->
+            <div>
+              <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1.5">用途 / Platform</p>
+              <p class="text-sm" :class="brief.purpose ? 'text-white value-pop' : 'text-neutral-800'" x-text="brief.purpose || '—'"></p>
+            </div>
+            <div class="h-px bg-white/[0.04]"></div>
+
+            <!-- duration -->
+            <div>
+              <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1.5">尺 / Duration</p>
+              <p class="text-sm" :class="brief.duration ? 'text-white value-pop' : 'text-neutral-800'" x-text="brief.duration || '—'"></p>
+            </div>
+            <div class="h-px bg-white/[0.04]"></div>
+
+            <!-- target -->
+            <div>
+              <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1.5">ターゲット / Target</p>
+              <p class="text-sm" :class="brief.target ? 'text-white value-pop' : 'text-neutral-800'" x-text="brief.target || '—'"></p>
+            </div>
+            <div class="h-px bg-white/[0.04]"></div>
+
+            <!-- tones -->
+            <div>
+              <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-2">トーン / Tone</p>
+              <div x-show="brief.tones.length" class="flex flex-wrap gap-1.5">
+                <template x-for="t in brief.tones" :key="t">
+                  <span class="value-pop inline-block px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" x-text="t"></span>
+                </template>
+              </div>
+              <p x-show="!brief.tones.length" class="text-sm text-neutral-800">—</p>
+            </div>
+            <div class="h-px bg-white/[0.04]"></div>
+
+            <!-- concept -->
+            <div>
+              <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1.5">コンセプト / Concept</p>
+              <p class="text-sm leading-relaxed" :class="brief.concept ? 'text-white value-pop' : 'text-neutral-800'" x-text="brief.concept || '—'"></p>
+            </div>
+            <div class="h-px bg-white/[0.04]"></div>
+
+            <!-- details -->
+            <div>
+              <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1.5">その他 / Notes</p>
+              <p class="text-sm leading-relaxed" :class="brief.details ? 'text-white value-pop' : 'text-neutral-800'" x-text="brief.details || '—'"></p>
+            </div>
+
+          </div>
+
+          <!-- completion card -->
+          <div x-show="done" x-transition class="mt-8 p-5 rounded-2xl bg-emerald-500/[0.07] border border-emerald-500/[0.15]">
+            <p class="text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              ブリーフ完成
+            </p>
+            <p class="text-[12px] text-emerald-500/60 leading-relaxed">AIがこの内容をもとに制作プランを設計します。</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- mobile brief toggle -->
+    <button
+      @click="mobilePanel = !mobilePanel"
+      class="lg:hidden fixed bottom-6 right-5 z-30 w-12 h-12 rounded-2xl
+             bg-white/[0.07] border border-white/[0.08] backdrop-blur-xl
+             flex items-center justify-center shadow-2xl shadow-black/40
+             hover:bg-white/[0.12] transition-colors"
+      :class="mobilePanel && 'bg-white/[0.14]'"
+    >
+      <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ALPINE COMPONENT
+     ═══════════════════════════════════════════ -->
+<script>
+document.addEventListener('alpine:init', () => {
+
+  Alpine.data('briefApp', () => ({
+
+    /* ── state ── */
+    brief: { purpose: '', duration: '', target: '', tones: [], concept: '', details: '' },
+    messages: [],
+    step: -1,
+    typing: false,
+    done: false,
+    inputText: '',
+    pendingTones: [],
+    customDuration: '',
+    showCustomDuration: false,
+    otherTarget: '',
+    showOtherTarget: false,
+    mobilePanel: false,
+
+    /* ── step definitions ── */
+    steps: [
+      {
+        key: 'purpose',
+        multi: false,
+        text: 'まず、動画の用途を教えてください。\nプラットフォームに合わせた構成を提案します。',
+        options: [
+          { label: 'TikTok',  value: 'TikTok' },
+          { label: 'Reels',   value: 'Reels' },
+          { label: 'YouTube', value: 'YouTube' },
+          { label: '広告',    value: '広告' },
+        ],
+      },
+      {
+        key: 'duration',
+        multi: false,
+        customInput: 'duration',
+        text: '動画の尺はどれくらいを想定していますか？',
+        options: [
+          { label: '30秒', value: '30秒' },
+          { label: '45秒', value: '45秒' },
+          { label: '60秒', value: '60秒' },
+        ],
+      },
+      {
+        key: 'target',
+        multi: false,
+        customInput: 'target',
+        text: 'ターゲットとなる視聴者を教えてください。\nコンテンツの方向性を決める大事な要素です。',
+        options: [
+          { label: '初心者',       value: '初心者' },
+          { label: 'ビジネス層',   value: 'ビジネス層' },
+          { label: '学生',         value: '学生' },
+          { label: '主婦',         value: '主婦' },
+          { label: 'クリエイター', value: 'クリエイター' },
+          { label: 'エンジニア',   value: 'エンジニア' },
+          { label: '起業家',       value: '起業家' },
+        ],
+      },
+      {
+        key: 'tones',
+        multi: true,
+        text: '動画のトーン（雰囲気）を選んでください。\n複数選択できます。選んだら「確定する」を押してください。',
+        options: [
+          { label: 'Energetic', value: 'Energetic' },
+          { label: 'Calm',      value: 'Calm' },
+          { label: 'Luxury',    value: 'Luxury' },
+          { label: 'Casual',    value: 'Casual' },
+        ],
+      },
+      {
+        key: 'concept',
+        input: true,
+        text: '動画のコンセプトやテーマを一言で教えてください。\n例：「忙しい人でも3分でわかるAI入門」',
+      },
+      {
+        key: 'details',
+        input: true,
+        text: '最後に、参考URL・要望・注意点など伝えておきたいことがあれば教えてください。\n特になければ「なし」で大丈夫です。',
+      },
+    ],
+
+    /* ── computed ── */
+    get completeness() {
+      let n = 0;
+      if (this.brief.purpose) n++;
+      if (this.brief.duration) n++;
+      if (this.brief.target) n++;
+      if (this.brief.tones.length) n++;
+      if (this.brief.concept) n++;
+      if (this.brief.details) n++;
+      return Math.round((n / 6) * 100);
+    },
+
+    get showTextInput() {
+      if (this.step < 0 || this.step >= this.steps.length) return false;
+      return !!this.steps[this.step].input;
+    },
+
+    get textPlaceholder() {
+      if (this.step < 0 || this.step >= this.steps.length) return '';
+      return this.steps[this.step].key === 'concept' ? 'コンセプトを入力...' : '参考URL・要望など...';
+    },
+
+    /* ── lifecycle ── */
+    boot() {
+      const raw = localStorage.getItem('boss-brief');
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          this.brief    = d.brief    ?? this.brief;
+          this.messages = (d.messages ?? []).map(m => ({ ...m, _fresh: false }));
+          this.step     = d.step     ?? -1;
+          this.done     = d.done     ?? false;
+          /* recover missing AI message for current step */
+          if (!this.done && this.step >= 0 && this.step < this.steps.length) {
+            if (!this.messages.some(m => m._stepIdx === this.step)) {
+              this._pushStepMessage(this.step);
+            }
+          }
+          this.$nextTick(() => this._scroll());
+          return;
+        } catch { /* corrupted → start fresh */ }
+      }
+      this._pushAi('こんにちは！boss.ai のブリーフ作成アシスタントです。\nいくつかの質問に答えるだけで、動画の制作ブリーフが完成します。');
+      this._advance();
+    },
+
+    /* ── actions ── */
+
+    /* single-select chip clicked */
+    pickSingle(msg, opt) {
+      msg.answered = true;
+      this._pushUser(opt.label);
+      this.brief[msg._key] = opt.value;
+      this._save();
+      this._advance();
+    },
+
+    /* tone toggle */
+    toggleTone(val) {
+      const i = this.pendingTones.indexOf(val);
+      i > -1 ? this.pendingTones.splice(i, 1) : this.pendingTones.push(val);
+    },
+
+    /* tone confirm */
+    confirmTones(msg) {
+      if (!this.pendingTones.length) return;
+      msg.answered = true;
+      this.brief.tones = [...this.pendingTones];
+      this._pushUser(this.pendingTones.join(' / '));
+      this.pendingTones = [];
+      this._save();
+      this._advance();
+    },
+
+    /* custom duration */
+    submitCustomDuration(msg) {
+      const v = String(this.customDuration).trim();
+      if (!v) return;
+      msg.answered = true;
+      const label = v + '秒';
+      this._pushUser(label);
+      this.brief.duration = label;
+      this.customDuration = '';
+      this.showCustomDuration = false;
+      this._save();
+      this._advance();
+    },
+
+    /* other target */
+    submitOtherTarget(msg) {
+      const v = this.otherTarget.trim();
+      if (!v) return;
+      msg.answered = true;
+      this._pushUser(v);
+      this.brief.target = v;
+      this.otherTarget = '';
+      this.showOtherTarget = false;
+      this._save();
+      this._advance();
+    },
+
+    /* free-text submit */
+    submitText() {
+      const v = this.inputText.trim();
+      if (!v) return;
+      this._pushUser(v);
+      this.brief[this.steps[this.step].key] = v;
+      this.inputText = '';
+      this._save();
+      this._advance();
+    },
+
+    /* reset */
+    reset() {
+      localStorage.removeItem('boss-brief');
+      this.brief = { purpose: '', duration: '', target: '', tones: [], concept: '', details: '' };
+      this.messages = [];
+      this.step = -1;
+      this.done = false;
+      this.pendingTones = [];
+      this.inputText = '';
+      this.customDuration = '';
+      this.showCustomDuration = false;
+      this.otherTarget = '';
+      this.showOtherTarget = false;
+      this._pushAi('リセットしました。もう一度はじめましょう！');
+      this._advance();
+    },
+
+    /* ── internals ── */
+
+    async _advance() {
+      this.step++;
+      if (this.step >= this.steps.length) {
+        this.typing = true;
+        this._save();
+        await this._wait(700);
+        this.typing = false;
+        this.done = true;
+        this._pushAi('ブリーフが完成しました！\nこの内容をもとに、AIが最適な制作プランを設計します。');
+        this._save();
+        return;
+      }
+      this.typing = true;
+      await this._wait(450 + Math.random() * 350);
+      this.typing = false;
+      this._pushStepMessage(this.step);
+      this._save();
+      /* focus text input if applicable */
+      if (this.steps[this.step].input) {
+        this.$nextTick(() => this.$refs.textInput?.focus());
+      }
+    },
+
+    _pushStepMessage(idx) {
+      const s = this.steps[idx];
+      const msg = {
+        role: 'ai',
+        text: s.text,
+        type: s.options ? 'options' : 'text',
+        options: s.options || null,
+        multi: !!s.multi,
+        customInput: s.customInput || null,
+        answered: false,
+        _key: s.key,
+        _stepIdx: idx,
+        _fresh: true,
+        id: this._id(),
+      };
+      this.messages.push(msg);
+      this.$nextTick(() => this._scroll());
+    },
+
+    _pushAi(text) {
+      this.messages.push({ role: 'ai', text, type: 'text', _fresh: true, id: this._id() });
+      this.$nextTick(() => this._scroll());
+    },
+
+    _pushUser(text) {
+      this.messages.push({ role: 'user', text, _fresh: true, id: this._id() });
+      this.$nextTick(() => this._scroll());
+    },
+
+    _save() {
+      localStorage.setItem('boss-brief', JSON.stringify({
+        brief: this.brief,
+        messages: this.messages,
+        step: this.step,
+        done: this.done,
+      }));
+    },
+
+    _scroll() {
+      const el = document.getElementById('chat-scroll');
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    },
+
+    _wait(ms) { return new Promise(r => setTimeout(r, ms)); },
+    _id() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); },
+
+  }));
+
+});
+</script>
+</body>
+</html>
