@@ -591,7 +591,160 @@ body::after {
 }
 
 
-/* ── 18. Mono Label ── */
+/* ── 18. Slot (Text Rotate) Animation ── */
+
+/*  5 items stacked (4 unique + 1st duplicated at end for seamless loop).
+    Each item = 20% of track height.
+    Positions:  #1 = 0%  |  #2 = -20%  |  #3 = -40%  |  #4 = -60%  |  #5(dup) = -80%
+    Total cycle: 10s  ·  Hold ≈2s per word  ·  Transition ≈0.4s (fast spin)           */
+
+.slot {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  height: 1.15em;
+  position: relative;
+}
+
+/* ── Glow underline — flashes on each word landing ── */
+.slot::after {
+  content: '';
+  position: absolute;
+  bottom: 0.08em;
+  left: -2%;
+  right: -2%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent-ai);
+  opacity: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: slotGlow 10s ease infinite;
+  animation-delay: 3s;
+}
+
+.slot-track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform, filter;
+  animation: slotSpin 10s infinite;
+  animation-delay: 3s;
+}
+.slot-track:hover {
+  animation-play-state: paused;
+}
+
+.slot-item {
+  display: block;
+  height: 1.15em;
+  flex-shrink: 0;
+  line-height: 1.15;
+}
+
+/* ── Main spin keyframes ──
+   Each transition: blur ramps up → fast slide with overshoot → bounce settle → blur clears
+   This mimics a physical slot reel: acceleration → deceleration → bounce              */
+
+@keyframes slotSpin {
+  /* ━━ Hold: Word 1 ━━ */
+  0%, 17% {
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+  /* ── Spin → Word 2 ── */
+  18% {
+    transform: translateY(-3%);
+    filter: blur(8px);
+  }
+  19.5% {
+    transform: translateY(-18%);
+    filter: blur(6px);
+  }
+  20.5% {
+    transform: translateY(-21.2%);
+    filter: blur(1.5px);
+  }
+  21.5%, 42% {
+    transform: translateY(-20%);
+    filter: blur(0px);
+  }
+
+  /* ── Spin → Word 3 ── */
+  43% {
+    transform: translateY(-23%);
+    filter: blur(8px);
+  }
+  44.5% {
+    transform: translateY(-38%);
+    filter: blur(6px);
+  }
+  45.5% {
+    transform: translateY(-41.2%);
+    filter: blur(1.5px);
+  }
+  46.5%, 67% {
+    transform: translateY(-40%);
+    filter: blur(0px);
+  }
+
+  /* ── Spin → Word 4 ── */
+  68% {
+    transform: translateY(-43%);
+    filter: blur(8px);
+  }
+  69.5% {
+    transform: translateY(-58%);
+    filter: blur(6px);
+  }
+  70.5% {
+    transform: translateY(-61.2%);
+    filter: blur(1.5px);
+  }
+  71.5%, 92% {
+    transform: translateY(-60%);
+    filter: blur(0px);
+  }
+
+  /* ── Spin → Word 5 (dup of 1 — seamless loop) ── */
+  93% {
+    transform: translateY(-63%);
+    filter: blur(8px);
+  }
+  94.5% {
+    transform: translateY(-78%);
+    filter: blur(6px);
+  }
+  95.5% {
+    transform: translateY(-81.2%);
+    filter: blur(1.5px);
+  }
+  96.5%, 100% {
+    transform: translateY(-80%);
+    filter: blur(0px);
+  }
+}
+
+/* ── Glow underline timeline — flash + fade at each landing moment ── */
+@keyframes slotGlow {
+  0%, 19%   { opacity: 0; }
+  21.5%     { opacity: 1;   box-shadow: 0 0 18px var(--accent-ai), 0 0 6px var(--accent-ai); }
+  25%       { opacity: 0;   box-shadow: none; }
+
+  44%       { opacity: 0; }
+  46.5%     { opacity: 1;   box-shadow: 0 0 18px var(--accent-ai), 0 0 6px var(--accent-ai); }
+  50%       { opacity: 0;   box-shadow: none; }
+
+  69%       { opacity: 0; }
+  71.5%     { opacity: 1;   box-shadow: 0 0 18px var(--accent-ai), 0 0 6px var(--accent-ai); }
+  75%       { opacity: 0;   box-shadow: none; }
+
+  94%       { opacity: 0; }
+  96.5%     { opacity: 1;   box-shadow: 0 0 18px var(--accent-ai), 0 0 6px var(--accent-ai); }
+  100%      { opacity: 0;   box-shadow: none; }
+}
+
+
+/* ── 19. Mono Label ── */
 .mono-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -601,7 +754,7 @@ body::after {
 }
 
 
-/* ── 19. Responsive Adjustments ── */
+/* ── 20. Responsive Adjustments ── */
 @media (max-width: 640px) {
   .concept-quote {
     font-size: 1.75rem;
