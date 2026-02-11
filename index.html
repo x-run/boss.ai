@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>boss.ai — AIが雇い、人間が編集する</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="font-sans antialiased">
+
+  <!-- ============================== -->
+  <!--  LOADER                         -->
+  <!-- ============================== -->
+  <div id="loader">
+    <span class="loader-logo">boss<span style="color:#525252">.ai</span></span>
+  </div>
+
+  <!-- ============================== -->
+  <!--  NAVIGATION                     -->
+  <!-- ============================== -->
+  <nav
+    class="nav fixed top-0 w-full z-50 border-b border-transparent"
+    x-data="{ scrolled: false }"
+    x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 50, { passive: true })"
+    :class="scrolled && 'is-scrolled'"
+  >
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="#" class="text-lg font-extrabold tracking-tight leading-none">
+        boss<span class="text-neutral-600">.ai</span>
+      </a>
+      <div class="flex items-center gap-8">
+        <a href="#workflow" class="nav-link text-[13px]">仕組み</a>
+        <a href="#problem"  class="nav-link text-[13px]">課題</a>
+        <a href="#concept"  class="nav-link text-[13px]">思想</a>
+      </div>
+    </div>
+  </nav>
+
+
+  <!-- ============================== -->
+  <!--  HERO                           -->
+  <!-- ============================== -->
+  <section class="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden bg-dots">
+    <!-- Ambient orbs -->
+    <div class="orb orb--emerald" aria-hidden="true"></div>
+    <div class="orb orb--blue"    aria-hidden="true"></div>
+    <div class="orb orb--violet"  aria-hidden="true"></div>
+
+    <div class="relative z-10 text-center max-w-4xl mx-auto" id="hero-content">
+      <!-- Badge -->
+      <div class="reveal-line mb-10">
+        <div class="reveal-text reveal-d1 inline-block">
+          <span class="inline-flex items-center gap-3 text-[11px] font-medium tracking-[0.15em] uppercase text-neutral-400 border border-white/[0.07] rounded-full px-5 py-2 bg-white/[0.02]">
+            <span class="status-dot relative w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            動画制作の構造を変える
+          </span>
+        </div>
+      </div>
+
+      <!-- Headline -->
+      <h1 class="mb-8">
+        <span class="reveal-line">
+          <span class="reveal-text reveal-d2 hero-headline-gradient text-[clamp(2.8rem,8vw,6rem)] font-black leading-[1.05] tracking-tight">
+            AIが雇い、
+          </span>
+        </span>
+        <span class="reveal-line">
+          <span class="reveal-text reveal-d3 text-[clamp(2.8rem,8vw,6rem)] font-black leading-[1.05] tracking-tight text-white">
+            人間が編集する。
+          </span>
+        </span>
+      </h1>
+
+      <!-- Subcopy -->
+      <div class="reveal-line mb-3">
+        <p class="reveal-text reveal-d4 text-base sm:text-lg md:text-xl text-neutral-400 leading-[1.85] max-w-2xl mx-auto">
+          依頼主はAIと要件を固め、AIがクリエイターに発注し一次評価。<br class="hidden sm:block" />
+          依頼主が最終確認するだけで、動画が届く。
+        </p>
+      </div>
+
+      <!-- English tagline -->
+      <div class="reveal-line mb-12">
+        <p class="reveal-text reveal-d5 text-sm text-neutral-700 font-mono tracking-wide">
+          AI directs. Humans craft. You approve.
+        </p>
+      </div>
+
+      <!-- CTAs -->
+      <div class="reveal-line">
+        <div class="reveal-text reveal-d6 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#workflow" class="cta">
+            <span class="relative z-10">仕組みを見る</span>
+            <svg class="relative z-10 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+          <a href="#concept" class="cta-ghost">
+            思想を読む
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2">
+      <div class="scroll-indicator"></div>
+    </div>
+  </section>
+
+  <div class="divider max-w-6xl mx-auto"></div>
+
+
+  <!-- ============================== -->
+  <!--  WORKFLOW                       -->
+  <!-- ============================== -->
+  <section id="workflow" class="py-28 sm:py-40 px-6 relative">
+    <div class="max-w-6xl mx-auto" x-data="{ show: false }" x-intersect:enter.half="show = true">
+
+      <!-- Header -->
+      <div class="text-center mb-20 sr" :class="show && 'is-visible'">
+        <p class="mono-label text-emerald-500/60 mb-5">Workflow</p>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6">
+          4ステップで、<span class="text-neutral-700">自律的に回る。</span>
+        </h2>
+        <p class="text-neutral-500 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+          発注から納品まで。AIがプロジェクトを統括し、人間が品質を仕上げる。
+        </p>
+      </div>
+
+      <!-- Flow: 4 steps + 3 connectors -->
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_48px_1fr_48px_1fr_48px_1fr] gap-3 md:gap-0 max-w-5xl mx-auto items-stretch sr-stagger">
+
+        <!-- Step 1: AI — 企画 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass glass--ai rounded-2xl p-6 h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="step-num step-num--ai">01</span>
+              <span class="step-label text-emerald-500/50">AI Director</span>
+            </div>
+            <h3 class="text-[17px] font-semibold mb-2">企画・分解</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75]">依頼を分析し、構成・シーン・テロップを自動設計。タスクを生成し最適なクリエイターを選定。</p>
+          </div>
+        </div>
+
+        <!-- Connector 1→2 -->
+        <div class="flow-connector sr" :class="show && 'is-visible'"></div>
+
+        <!-- Step 2: Human — 編集 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass glass--human rounded-2xl p-6 h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="step-num step-num--human">02</span>
+              <span class="step-label text-blue-500/50">Human Editor</span>
+            </div>
+            <h3 class="text-[17px] font-semibold mb-2">編集・調整</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75]">人間のクリエイターがカット編集、色補正、音声調整など品質に関わる領域を磨き上げる。</p>
+          </div>
+        </div>
+
+        <!-- Connector 2→3 -->
+        <div class="flow-connector sr" :class="show && 'is-visible'"></div>
+
+        <!-- Step 3: AI — 検品 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass glass--ai rounded-2xl p-6 h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="step-num step-num--ai">03</span>
+              <span class="step-label text-emerald-500/50">AI Review</span>
+            </div>
+            <h3 class="text-[17px] font-semibold mb-2">検品・一次評価</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75]">完成物をAIが品質チェック。ガイドラインとの整合性を検証し、修正点を自動フィードバック。</p>
+          </div>
+        </div>
+
+        <!-- Connector 3→4 -->
+        <div class="flow-connector sr" :class="show && 'is-visible'"></div>
+
+        <!-- Step 4: Client — 納品 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass glass--client rounded-2xl p-6 h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="step-num step-num--client">04</span>
+              <span class="step-label text-amber-500/50">Client</span>
+            </div>
+            <h3 class="text-[17px] font-semibold mb-2">最終確認・納品</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75]">依頼主が最終確認し承認。修正があればAIが即座にタスクを再分解し、サイクルを回す。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow summary -->
+      <div class="mt-16 text-center sr" :class="show && 'is-visible'" style="transition-delay:.35s">
+        <div class="flow-pill text-sm">
+          <span class="font-semibold text-emerald-400">AI</span>
+          <svg class="w-3.5 h-3.5 text-neutral-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-semibold text-blue-400">人間</span>
+          <svg class="w-3.5 h-3.5 text-neutral-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-semibold text-emerald-400">AI</span>
+          <svg class="w-3.5 h-3.5 text-neutral-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-semibold text-amber-400">依頼主</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider max-w-6xl mx-auto"></div>
+
+
+  <!-- ============================== -->
+  <!--  PROBLEM → SOLUTION             -->
+  <!-- ============================== -->
+  <section id="problem" class="py-28 sm:py-40 px-6">
+    <div class="max-w-6xl mx-auto" x-data="{ show: false }" x-intersect:enter.half="show = true">
+
+      <!-- Header -->
+      <div class="text-center mb-20 sr" :class="show && 'is-visible'">
+        <p class="mono-label text-red-400/50 mb-5">Problem &amp; Solution</p>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6">
+          構造で、<span class="text-neutral-700">課題を解く。</span>
+        </h2>
+      </div>
+
+      <!-- Cards -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-5xl mx-auto sr-stagger">
+
+        <!-- Card 1 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass rounded-2xl p-7 h-full">
+            <!-- Problem -->
+            <div class="flex items-center gap-2.5 mb-5">
+              <span class="ps-icon ps-icon--problem">
+                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </span>
+              <span class="mono-label text-red-400/50" style="font-size:10px">Problem</span>
+            </div>
+            <h3 class="text-[15px] font-semibold mb-2 text-red-300/80">ディレクションに時間が消える</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75] mb-6">クリエイター選定、指示書作成、進捗管理。動画の中身より「管理業務」にリソースが取られる。</p>
+
+            <div class="ps-divider mb-6"></div>
+
+            <!-- Solution -->
+            <div class="flex items-center gap-2.5 mb-4">
+              <span class="ps-icon ps-icon--solve">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </span>
+              <span class="mono-label text-emerald-500/50" style="font-size:10px">Solution</span>
+            </div>
+            <p class="text-[13px] text-neutral-300 leading-[1.75]">AIが要件定義からタスク分解、人材アサインまでを自動化。依頼主は「確認するだけ」に。</p>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass rounded-2xl p-7 h-full">
+            <div class="flex items-center gap-2.5 mb-5">
+              <span class="ps-icon ps-icon--problem">
+                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </span>
+              <span class="mono-label text-red-400/50" style="font-size:10px">Problem</span>
+            </div>
+            <h3 class="text-[15px] font-semibold mb-2 text-red-300/80">品質がばらつく</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75] mb-6">担当者の力量次第でアウトプットが変わる。AI単体では「最後の1%」が仕上がらない。</p>
+
+            <div class="ps-divider mb-6"></div>
+
+            <div class="flex items-center gap-2.5 mb-4">
+              <span class="ps-icon ps-icon--solve">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </span>
+              <span class="mono-label text-emerald-500/50" style="font-size:10px">Solution</span>
+            </div>
+            <p class="text-[13px] text-neutral-300 leading-[1.75]">AIが一次品質を担保し、人間の職人が仕上げる二重構造。属人性を排除しつつ、クオリティを維持。</p>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="sr" :class="show && 'is-visible'">
+          <div class="glass rounded-2xl p-7 h-full">
+            <div class="flex items-center gap-2.5 mb-5">
+              <span class="ps-icon ps-icon--problem">
+                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </span>
+              <span class="mono-label text-red-400/50" style="font-size:10px">Problem</span>
+            </div>
+            <h3 class="text-[15px] font-semibold mb-2 text-red-300/80">本数が増えるとスケールしない</h3>
+            <p class="text-[13px] text-neutral-500 leading-[1.75] mb-6">人に依存する制作フローは、本数に比例してコストが線形に膨らむ。</p>
+
+            <div class="ps-divider mb-6"></div>
+
+            <div class="flex items-center gap-2.5 mb-4">
+              <span class="ps-icon ps-icon--solve">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </span>
+              <span class="mono-label text-emerald-500/50" style="font-size:10px">Solution</span>
+            </div>
+            <p class="text-[13px] text-neutral-300 leading-[1.75]">AIが並列でプロジェクトを統括。10本でも100本でも、管理コストはほぼ一定。仕組みで解く。</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider max-w-6xl mx-auto"></div>
+
+
+  <!-- ============================== -->
+  <!--  CONCEPT                        -->
+  <!-- ============================== -->
+  <section id="concept" class="py-28 sm:py-40 px-6 relative overflow-hidden">
+    <div class="concept-glow" aria-hidden="true"></div>
+
+    <div class="relative z-10 max-w-4xl mx-auto text-center" x-data="{ show: false }" x-intersect:enter.half="show = true">
+
+      <div class="sr" :class="show && 'is-visible'">
+        <p class="mono-label text-purple-400/50 mb-14">Concept</p>
+
+        <blockquote class="concept-quote mb-10">
+          <span class="text-white">AIが、ボスになる。</span><br />
+          <span class="text-neutral-800">人間は、職人になる。</span>
+        </blockquote>
+      </div>
+
+      <div class="sr" :class="show && 'is-visible'" style="transition-delay:.12s">
+        <p class="text-neutral-400 text-base sm:text-lg leading-[1.9] max-w-2xl mx-auto mb-16">
+          プロジェクト管理、タスク分解、品質管理はAIが担う。<br />
+          人間は、クリエイティブという<span class="text-neutral-200 font-medium">「最も人間的な仕事」</span>に集中する。
+        </p>
+      </div>
+
+      <div class="sr" :class="show && 'is-visible'" style="transition-delay:.24s">
+        <div class="definition-box px-8 sm:px-12 py-7 max-w-lg mx-auto">
+          <p class="mono-label text-neutral-600 mb-3" style="font-size:10px">Definition</p>
+          <p class="text-[15px] sm:text-base text-neutral-300 leading-[1.75] font-medium">
+            <span class="text-white font-bold">boss.ai</span>
+            <span class="text-neutral-600 mx-1">=</span>
+            AIがディレクションし、人間がクラフトする動画制作プラットフォーム
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider max-w-6xl mx-auto"></div>
+
+
+  <!-- ============================== -->
+  <!--  FOOTER                         -->
+  <!-- ============================== -->
+  <footer class="py-14 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <span class="text-sm font-extrabold tracking-tight">boss<span class="text-neutral-700">.ai</span></span>
+      <span class="text-xs text-neutral-800">&copy; 2025 boss.ai &mdash; All rights reserved.</span>
+    </div>
+  </footer>
+
+
+  <!-- ============================== -->
+  <!--  SCRIPTS                        -->
+  <!-- ============================== -->
+  <script>
+    // ── Loader dismiss ──
+    window.addEventListener('load', () => {
+      // Small delay so the logo is visible for a moment
+      setTimeout(() => {
+        document.getElementById('loader').classList.add('loaded');
+        // Trigger hero text reveals after loader fades
+        setTimeout(() => {
+          document.querySelectorAll('#hero-content .reveal-text').forEach(el => {
+            el.classList.add('is-visible');
+          });
+        }, 200);
+      }, 600);
+    });
+  </script>
+
+</body>
+</html>
