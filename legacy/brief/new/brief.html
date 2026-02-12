@@ -76,6 +76,31 @@
       100% { opacity: 1; transform: scale(1); }
     }
     .value-pop { animation: valuePop 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+
+    /* modal */
+    .modal-backdrop {
+      transition: opacity 0.25s ease;
+    }
+    .modal-panel {
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .modal-panel.entering { opacity: 0; transform: scale(0.96) translateY(8px); }
+
+    /* asset link */
+    .asset-link {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    /* job card pop */
+    @keyframes jobCardIn {
+      0%   { opacity: 0; transform: translateY(12px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .job-card-anim { animation: jobCardIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
   </style>
 </head>
 
@@ -285,9 +310,21 @@
       :class="mobilePanel ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'"
     >
       <div class="h-full flex flex-col">
-        <div class="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 class="text-sm font-semibold tracking-tight">制作ブリーフ</h2>
-          <span class="text-[10px] font-mono text-neutral-600 tracking-wider" x-text="completeness + '% 完成'"></span>
+        <div class="px-6 pt-6 pb-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold tracking-tight">制作ブリーフ</h2>
+            <span class="text-[10px] font-mono text-neutral-600 tracking-wider" x-text="completeness + '% 完成'"></span>
+          </div>
+          <button
+            @click="openAssetModal()"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold
+                   bg-white/[0.03] border border-white/[0.07] text-neutral-400
+                   hover:bg-white/[0.07] hover:border-white/[0.14] hover:text-white
+                   active:scale-[0.97] transition-all duration-150"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            素材を追加
+          </button>
         </div>
 
         <div class="flex-1 overflow-y-auto scroll-area px-6 pb-6">
@@ -339,6 +376,49 @@
               <p class="text-sm leading-relaxed" :class="brief.details ? 'text-white value-pop' : 'text-neutral-800'" x-text="brief.details || '—'"></p>
             </div>
 
+            <template x-if="assetHasAny">
+              <div>
+                <div class="h-px bg-white/[0.04] mb-5"></div>
+                <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-3">素材 / Assets</p>
+                <div class="space-y-3">
+                  <template x-if="brief.assets_url">
+                    <div class="value-pop">
+                      <p class="text-[10px] text-neutral-600 mb-0.5">素材共有リンク</p>
+                      <a :href="brief.assets_url" target="_blank" rel="noopener noreferrer"
+                         class="asset-link text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors" x-text="brief.assets_url"></a>
+                    </div>
+                  </template>
+                  <template x-if="brief.bgm_url">
+                    <div class="value-pop">
+                      <p class="text-[10px] text-neutral-600 mb-0.5">BGM候補</p>
+                      <a :href="brief.bgm_url" target="_blank" rel="noopener noreferrer"
+                         class="asset-link text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors" x-text="brief.bgm_url"></a>
+                    </div>
+                  </template>
+                  <template x-if="brief.logo_url">
+                    <div class="value-pop">
+                      <p class="text-[10px] text-neutral-600 mb-0.5">ロゴ素材</p>
+                      <a :href="brief.logo_url" target="_blank" rel="noopener noreferrer"
+                         class="asset-link text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors" x-text="brief.logo_url"></a>
+                    </div>
+                  </template>
+                  <template x-if="brief.thumb_url">
+                    <div class="value-pop">
+                      <p class="text-[10px] text-neutral-600 mb-0.5">サムネイル素材</p>
+                      <a :href="brief.thumb_url" target="_blank" rel="noopener noreferrer"
+                         class="asset-link text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors" x-text="brief.thumb_url"></a>
+                    </div>
+                  </template>
+                  <template x-if="brief.font_note">
+                    <div class="value-pop">
+                      <p class="text-[10px] text-neutral-600 mb-0.5">フォント指定</p>
+                      <p class="text-[13px] text-white" x-text="brief.font_note"></p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
           </div>
 
           <!-- completion card -->
@@ -349,6 +429,69 @@
             </p>
             <p class="text-[12px] text-emerald-500/60 leading-relaxed">AIがこの内容をもとに制作プランを設計します。</p>
           </div>
+
+          <!-- create job button -->
+          <div x-show="done && !currentJobId" x-transition class="mt-4">
+            <button
+              @click="createJob(); _save();"
+              class="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl text-[13px] font-semibold
+                     bg-white text-black
+                     hover:shadow-lg hover:shadow-white/[0.08] active:scale-[0.97]
+                     transition-all duration-150"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.06-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V8.25a2.25 2.25 0 00-2.25-2.25h-5.38a1.5 1.5 0 01-1.06-.44z"/></svg>
+              案件を作成する
+            </button>
+          </div>
+
+          <!-- job card -->
+          <template x-if="currentJob">
+            <div class="mt-4 job-card-anim">
+              <div class="p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] space-y-4">
+                <!-- header -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span class="text-[10px] font-mono tracking-[0.12em] uppercase text-neutral-500">JOB</span>
+                  </div>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase
+                               bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                        x-text="currentJob.status"></span>
+                </div>
+
+                <!-- job id -->
+                <div>
+                  <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1">Job ID</p>
+                  <p class="text-[12px] font-mono text-white/80 break-all select-all" x-text="currentJob.id"></p>
+                </div>
+                <div class="h-px bg-white/[0.04]"></div>
+
+                <!-- created at -->
+                <div>
+                  <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600 mb-1">作成日時</p>
+                  <p class="text-[13px] text-white/70" x-text="new Date(currentJob.createdAt).toLocaleString('ja-JP')"></p>
+                </div>
+                <div class="h-px bg-white/[0.04]"></div>
+
+                <!-- brief snapshot summary -->
+                <div class="space-y-2.5">
+                  <p class="text-[10px] font-mono tracking-[0.15em] uppercase text-neutral-600">ブリーフ概要</p>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-neutral-600 flex-shrink-0 w-14">用途</span>
+                    <span class="text-[13px] text-white/80" x-text="currentJob.briefSnapshot.purpose || '—'"></span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-neutral-600 flex-shrink-0 w-14">尺</span>
+                    <span class="text-[13px] text-white/80" x-text="currentJob.briefSnapshot.duration || '—'"></span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-neutral-600 flex-shrink-0 w-14">ターゲット</span>
+                    <span class="text-[13px] text-white/80" x-text="currentJob.briefSnapshot.target || '—'"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </aside>
@@ -368,6 +511,122 @@
     </button>
   </div>
 
+  <!-- ═══ ASSET MODAL ═══ -->
+  <template x-teleport="body">
+    <div
+      x-show="showAssetModal"
+      x-transition:enter="transition ease-out duration-250"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      @keydown.escape.window="showAssetModal = false"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style="display:none"
+    >
+      <!-- backdrop -->
+      <div @click="showAssetModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+      <!-- panel -->
+      <div
+        x-show="showAssetModal"
+        x-transition:enter="transition ease-out duration-250"
+        x-transition:enter-start="opacity-0 scale-[0.96] translate-y-2"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-[0.96]"
+        class="relative w-full max-w-md bg-[#0c0c0c]/95 backdrop-blur-2xl border border-white/[0.08]
+               rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
+        @click.stop
+      >
+        <!-- header -->
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.05]">
+          <div>
+            <h3 class="text-sm font-semibold tracking-tight">素材を追加</h3>
+            <p class="text-[11px] text-neutral-600 mt-0.5">URLは https:// から入力してください</p>
+          </div>
+          <button @click="showAssetModal = false"
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-white hover:bg-white/[0.06] transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- form -->
+        <div class="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto scroll-area">
+
+          <!-- assets_url -->
+          <div>
+            <label class="block text-[11px] font-medium text-neutral-500 mb-1.5">素材共有リンク</label>
+            <input type="url" x-model="assetForm.assets_url" placeholder="https://drive.google.com/..."
+              class="w-full px-3.5 py-2.5 rounded-xl text-[13px] bg-white/[0.035] border text-white placeholder-neutral-700
+                     focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition"
+              :class="assetErrors.assets_url ? 'border-red-500/40' : 'border-white/[0.07]'"
+            />
+            <p x-show="assetErrors.assets_url" x-transition class="text-[11px] text-red-400 mt-1" x-text="assetErrors.assets_url"></p>
+          </div>
+
+          <!-- bgm_url -->
+          <div>
+            <label class="block text-[11px] font-medium text-neutral-500 mb-1.5">BGM候補リンク</label>
+            <input type="url" x-model="assetForm.bgm_url" placeholder="https://..."
+              class="w-full px-3.5 py-2.5 rounded-xl text-[13px] bg-white/[0.035] border text-white placeholder-neutral-700
+                     focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition"
+              :class="assetErrors.bgm_url ? 'border-red-500/40' : 'border-white/[0.07]'"
+            />
+            <p x-show="assetErrors.bgm_url" x-transition class="text-[11px] text-red-400 mt-1" x-text="assetErrors.bgm_url"></p>
+          </div>
+
+          <!-- logo_url -->
+          <div>
+            <label class="block text-[11px] font-medium text-neutral-500 mb-1.5">ロゴ素材URL</label>
+            <input type="url" x-model="assetForm.logo_url" placeholder="https://..."
+              class="w-full px-3.5 py-2.5 rounded-xl text-[13px] bg-white/[0.035] border text-white placeholder-neutral-700
+                     focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition"
+              :class="assetErrors.logo_url ? 'border-red-500/40' : 'border-white/[0.07]'"
+            />
+            <p x-show="assetErrors.logo_url" x-transition class="text-[11px] text-red-400 mt-1" x-text="assetErrors.logo_url"></p>
+          </div>
+
+          <!-- thumb_url -->
+          <div>
+            <label class="block text-[11px] font-medium text-neutral-500 mb-1.5">サムネイル素材URL</label>
+            <input type="url" x-model="assetForm.thumb_url" placeholder="https://..."
+              class="w-full px-3.5 py-2.5 rounded-xl text-[13px] bg-white/[0.035] border text-white placeholder-neutral-700
+                     focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition"
+              :class="assetErrors.thumb_url ? 'border-red-500/40' : 'border-white/[0.07]'"
+            />
+            <p x-show="assetErrors.thumb_url" x-transition class="text-[11px] text-red-400 mt-1" x-text="assetErrors.thumb_url"></p>
+          </div>
+
+          <!-- font_note -->
+          <div>
+            <label class="block text-[11px] font-medium text-neutral-500 mb-1.5">フォント指定</label>
+            <input type="text" x-model="assetForm.font_note" placeholder="例：Noto Sans JP Bold"
+              class="w-full px-3.5 py-2.5 rounded-xl text-[13px] bg-white/[0.035] border border-white/[0.07] text-white placeholder-neutral-700
+                     focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition"
+            />
+          </div>
+
+        </div>
+
+        <!-- footer -->
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.05]">
+          <button @click="showAssetModal = false"
+            class="px-4 py-2 rounded-xl text-[13px] font-medium text-neutral-500 hover:text-white transition-colors">
+            キャンセル
+          </button>
+          <button @click="saveAssets()"
+            class="px-5 py-2 rounded-xl text-[13px] font-semibold bg-white text-black
+                   hover:shadow-lg hover:shadow-white/[0.06] active:scale-[0.97] transition-all">
+            保存する
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
+
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -379,7 +638,10 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('briefApp', () => ({
 
     /* ── state ── */
-    brief: { purpose: '', duration: '', target: '', tones: [], concept: '', details: '' },
+    brief: {
+      purpose: '', duration: '', target: '', tones: [], concept: '', details: '',
+      assets_url: '', bgm_url: '', logo_url: '', thumb_url: '', font_note: '',
+    },
     messages: [],
     step: -1,
     typing: false,
@@ -391,6 +653,15 @@ document.addEventListener('alpine:init', () => {
     otherTarget: '',
     showOtherTarget: false,
     mobilePanel: false,
+
+    /* asset modal */
+    showAssetModal: false,
+    assetForm: { assets_url: '', bgm_url: '', logo_url: '', thumb_url: '', font_note: '' },
+    assetErrors: { assets_url: '', bgm_url: '', logo_url: '', thumb_url: '' },
+
+    /* jobs */
+    jobs: [],
+    currentJobId: null,
 
     /* ── step definitions ── */
     steps: [
@@ -466,6 +737,10 @@ document.addEventListener('alpine:init', () => {
       return Math.round((n / 6) * 100);
     },
 
+    get assetHasAny() {
+      return !!(this.brief.assets_url || this.brief.bgm_url || this.brief.logo_url || this.brief.thumb_url || this.brief.font_note);
+    },
+
     get showTextInput() {
       if (this.step < 0 || this.step >= this.steps.length) return false;
       return !!this.steps[this.step].input;
@@ -478,14 +753,17 @@ document.addEventListener('alpine:init', () => {
 
     /* ── lifecycle ── */
     boot() {
+      this.loadJobs();
       const raw = localStorage.getItem('boss-brief');
       if (raw) {
         try {
           const d = JSON.parse(raw);
-          this.brief    = d.brief    ?? this.brief;
+          this.brief    = { ...this.brief, ...(d.brief || {}) };
+          if (!Array.isArray(this.brief.tones)) this.brief.tones = [];
           this.messages = (d.messages ?? []).map(m => ({ ...m, _fresh: false }));
           this.step     = d.step     ?? -1;
           this.done     = d.done     ?? false;
+          this.currentJobId = d.currentJobId ?? null;
           /* recover missing AI message for current step */
           if (!this.done && this.step >= 0 && this.step < this.steps.length) {
             if (!this.messages.some(m => m._stepIdx === this.step)) {
@@ -569,10 +847,14 @@ document.addEventListener('alpine:init', () => {
     /* reset */
     reset() {
       localStorage.removeItem('boss-brief');
-      this.brief = { purpose: '', duration: '', target: '', tones: [], concept: '', details: '' };
+      this.brief = {
+        purpose: '', duration: '', target: '', tones: [], concept: '', details: '',
+        assets_url: '', bgm_url: '', logo_url: '', thumb_url: '', font_note: '',
+      };
       this.messages = [];
       this.step = -1;
       this.done = false;
+      this.currentJobId = null;
       this.pendingTones = [];
       this.inputText = '';
       this.customDuration = '';
@@ -581,6 +863,70 @@ document.addEventListener('alpine:init', () => {
       this.showOtherTarget = false;
       this._pushAi('リセットしました。もう一度はじめましょう！');
       this._advance();
+    },
+
+    /* ── jobs ── */
+
+    loadJobs() {
+      try {
+        const raw = localStorage.getItem('boss-jobs');
+        this.jobs = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(this.jobs)) this.jobs = [];
+      } catch { this.jobs = []; }
+    },
+
+    createJob() {
+      const job = {
+        id: 'job_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        status: 'open',
+        createdAt: Date.now(),
+        briefSnapshot: JSON.parse(JSON.stringify(this.brief)),
+      };
+      this.jobs.push(job);
+      this.currentJobId = job.id;
+      localStorage.setItem('boss-jobs', JSON.stringify(this.jobs));
+    },
+
+    get currentJob() {
+      return this.jobs.find(j => j.id === this.currentJobId) || null;
+    },
+
+    /* ── asset modal ── */
+
+    openAssetModal() {
+      this.assetForm = {
+        assets_url: this.brief.assets_url,
+        bgm_url:    this.brief.bgm_url,
+        logo_url:   this.brief.logo_url,
+        thumb_url:  this.brief.thumb_url,
+        font_note:  this.brief.font_note,
+      };
+      this.assetErrors = { assets_url: '', bgm_url: '', logo_url: '', thumb_url: '' };
+      this.showAssetModal = true;
+    },
+
+    saveAssets() {
+      /* validate URL fields */
+      const urlKeys = ['assets_url', 'bgm_url', 'logo_url', 'thumb_url'];
+      let valid = true;
+      this.assetErrors = { assets_url: '', bgm_url: '', logo_url: '', thumb_url: '' };
+      for (const k of urlKeys) {
+        const v = this.assetForm[k].trim();
+        if (v && !/^https?:\/\/.+/.test(v)) {
+          this.assetErrors[k] = 'http:// または https:// で始まるURLを入力してください';
+          valid = false;
+        }
+      }
+      if (!valid) return;
+
+      /* apply to brief */
+      this.brief.assets_url = this.assetForm.assets_url.trim();
+      this.brief.bgm_url    = this.assetForm.bgm_url.trim();
+      this.brief.logo_url   = this.assetForm.logo_url.trim();
+      this.brief.thumb_url  = this.assetForm.thumb_url.trim();
+      this.brief.font_note  = this.assetForm.font_note.trim();
+      this._save();
+      this.showAssetModal = false;
     },
 
     /* ── internals ── */
@@ -643,6 +989,7 @@ document.addEventListener('alpine:init', () => {
         messages: this.messages,
         step: this.step,
         done: this.done,
+        currentJobId: this.currentJobId,
       }));
     },
 
