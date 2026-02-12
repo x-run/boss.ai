@@ -3,7 +3,8 @@ import Layout from "./Layout";
 import Landing from "./pages/Landing";
 import BriefNew from "./pages/BriefNew";
 import WorkerRegister from "./pages/WorkerRegister";
-import JobsList from "./pages/JobsList";
+import Jobs from "./pages/Jobs";
+import JobDetail from "./pages/JobDetail";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
@@ -12,7 +13,8 @@ export const router = createBrowserRouter([
     children: [
       { path: "/brief/new", element: <BriefNew /> },
       { path: "/workers/register", element: <WorkerRegister /> },
-      { path: "/jobs", element: <JobsList /> },
+      { path: "/jobs", element: <Jobs /> },
+      { path: "/jobs/:id", element: <JobDetail /> },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },

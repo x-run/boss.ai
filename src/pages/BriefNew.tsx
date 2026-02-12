@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router";
 import type {
   Brief,
   Message,
@@ -9,6 +10,7 @@ import type {
 } from "../types/brief";
 import { EMPTY_BRIEF, uid } from "../types/brief";
 import { load, save, remove } from "../storage/kv";
+import { createJob } from "../lib/storage";
 import ChatThread from "../components/brief/ChatThread";
 import BriefPanel from "../components/brief/BriefPanel";
 import AssetModal from "../components/brief/AssetModal";
@@ -388,6 +390,14 @@ export default function BriefNew() {
     advance(freshBrief, initMsgs, -1);
   }, [advance]);
 
+  /* ── save as job ── */
+  const nav = useNavigate();
+
+  const saveAsJob = useCallback(() => {
+    const job = createJob(brief);
+    nav(`/jobs/${job.id}`);
+  }, [brief, nav]);
+
   /* ── asset modal actions ── */
 
   const openAssetModal = useCallback(() => {
@@ -484,6 +494,7 @@ export default function BriefNew() {
         completeness={completeness}
         done={done}
         onOpenAssets={openAssetModal}
+        onSaveAsJob={saveAsJob}
       />
 
       {/* ── ASSET MODAL ── */}

@@ -8,6 +8,7 @@ interface BriefPanelProps {
   completeness: number;
   done: boolean;
   onOpenAssets: () => void;
+  onSaveAsJob?: () => void;
 }
 
 /* ── Component ── */
@@ -17,6 +18,7 @@ export default function BriefPanel({
   completeness,
   done,
   onOpenAssets,
+  onSaveAsJob,
 }: BriefPanelProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -136,6 +138,19 @@ export default function BriefPanel({
             <p className="text-[12px] text-emerald-500/60 leading-relaxed">
               AIがこの内容をもとに制作プランを設計します。
             </p>
+            {onSaveAsJob && (
+              <button
+                onClick={onSaveAsJob}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                           text-[13px] font-semibold transition-all
+                           bg-white text-black hover:shadow-lg active:scale-[0.97]"
+              >
+                Jobとして保存
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
       </div>
