@@ -25,7 +25,7 @@
 | ローダー | ✅ | 600ms のブランドローダー |
 | ナビゲーション | ✅ | スクロールで `is-scrolled` 付与。「編集者登録」リンクあり |
 | Hero | ✅ | バッジ + ヘッドライン（スロットアニメ）+ サブコピー |
-| Hero CTA | ✅ | 「ブリーフを作成する」→ /brief/new、「編集者として登録する」→ /workers/new、「仕組みを見る」→ スクロール |
+| Hero CTA | ✅ | 「ブリーフを作成する」→ /brief/new、「編集者として登録する」→ /login、「仕組みを見る」→ スクロール |
 | Workflow | ✅ | 4ステップフロー（AI企画→人間編集→AI検品→Client納品） |
 | Problem/Solution | ✅ | 3枚の課題→解決カード |
 | Concept | ✅ | 「AIが、ボスになる。人間は、職人になる。」 |
@@ -196,7 +196,40 @@ Mobile:
 
 ---
 
-## 8. レガシー / 未使用画面
+## 8. ログイン
+
+| 項目 | 内容 |
+|------|------|
+| **パス** | `/login` |
+| **ファイル** | `src/pages/Login.tsx` |
+| **ステータス** | ✅ 実装済み |
+| **Layout** | 共通Layout |
+
+### 構成要素
+| 要素 | ステータス | 説明 |
+|------|-----------|------|
+| ヘッダー | ✅ | boss.ai ロゴ + "Worker Registration" テキスト |
+| Google Sign-In ボタン | ✅ | GIS renderButton で描画 |
+| 説明テキスト | ✅ | Googleアカウントで認証後、ワーカー登録へ進む旨の案内 |
+| リダイレクト | ✅ | ログイン済みの場合 /workers/new or /workers/:id へ自動遷移 |
+
+### データフロー
+```
+Login
+  → GIS callback(credential)
+  → decodeJwtPayload(credential)
+  → saveSession({ provider: "google", idToken, user, createdAt })
+  → navigate("/workers/new") or navigate("/workers/:id")
+```
+
+### 認証ガード（/workers/new）
+- 未ログイン → `/login` へリダイレクト
+- ログイン済み + Worker 登録済み（ownerUserId一致） → `/workers/:id` へリダイレクト
+- ログイン済み + 未登録 → フォーム表示
+
+---
+
+## 9. レガシー / 未使用画面
 
 | パス | ファイル | ステータス | 備考 |
 |------|---------|-----------|------|
@@ -205,7 +238,7 @@ Mobile:
 
 ---
 
-## 9. 将来の画面計画
+## 10. 将来の画面計画
 
 | 画面 | パス（案） | Phase | 説明 |
 |------|-----------|-------|------|

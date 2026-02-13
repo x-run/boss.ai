@@ -103,7 +103,7 @@ export default function Landing() {
             <button onClick={() => scrollTo(conceptEl)} className="nav-link text-[13px] bg-transparent border-none cursor-pointer">
               思想
             </button>
-            <Link to="/workers/new" className="nav-link text-[13px]">
+            <Link to="/login" className="nav-link text-[13px]">
               編集者登録
             </Link>
           </div>
@@ -176,7 +176,7 @@ export default function Landing() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
-              <Link to="/workers/new" className="cta-ghost">
+              <Link to="/login" className="cta-ghost">
                 編集者として登録する
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

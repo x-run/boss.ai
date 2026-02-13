@@ -25,6 +25,7 @@ export interface Worker {
   status: WorkerStatus;
   headline: string;
   capabilities: Capability[];
+  ownerUserId?: string;
 }
 
 /* ── Constants ── */
@@ -87,6 +88,10 @@ export function getAllWorkers(): Worker[] {
 
 export function getWorker(id: string): Worker | null {
   return getAllWorkers().find((w) => w.id === id) ?? null;
+}
+
+export function getWorkerByOwnerUserId(sub: string): Worker | null {
+  return getAllWorkers().find((w) => w.ownerUserId === sub) ?? null;
 }
 
 export function createWorker(

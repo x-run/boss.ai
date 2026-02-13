@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   createWorker,
   checkWorkerReadiness,
+  getWorkerByOwnerUserId,
   PLATFORMS,
   TOOLS,
   STRENGTHS,
@@ -12,6 +13,7 @@ import {
   type StrengthTag,
   type WorkerStatus,
 } from "../lib/workers";
+import { loadSession } from "../lib/auth";
 
 /* ── Step definitions ── */
 
@@ -123,6 +125,7 @@ function Chip({
 
 export default function WorkerNew() {
   const nav = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
   const [step, setStep] = useState<Step>(0);
   const [form, setForm] = useState<FormState>(INITIAL);
   const [urlInput, setUrlInput] = useState("");
@@ -163,6 +166,21 @@ export default function WorkerNew() {
 
   const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
 
+  /* ── Auth guard ── */
+  useEffect(() => {
+    const session = loadSession();
+    if (!session) {
+      nav("/login", { replace: true });
+      return;
+    }
+    const existing = getWorkerByOwnerUserId(session.user.sub);
+    if (existing) {
+      nav(`/workers/${existing.id}`, { replace: true });
+      return;
+    }
+    setAuthChecked(true);
+  }, [nav]);
+
   /* portfolio url add */
   const addUrl = () => {
     const trimmed = urlInput.trim();
@@ -186,6 +204,7 @@ export default function WorkerNew() {
 
   /* save */
   const handleSave = () => {
+    const session = loadSession();
     createWorker({
       name: form.name.trim(),
       status: form.status,
@@ -201,10 +220,13 @@ export default function WorkerNew() {
           portfolioUrls: form.portfolioUrls,
         },
       ],
+      ownerUserId: session?.user.sub,
     });
     setToast(true);
     setTimeout(() => nav("/workers"), 1200);
   };
+
+  if (!authChecked) return null;
 
   /* ── Render steps ── */
 

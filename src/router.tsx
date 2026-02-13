@@ -8,6 +8,7 @@ import JobDetail from "./pages/JobDetail";
 import Workers from "./pages/Workers";
 import WorkerNew from "./pages/WorkerNew";
 import WorkerDetail from "./pages/WorkerDetail";
+import Login from "./pages/Login";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: "/workers/:id", element: <WorkerDetail /> },
       { path: "/jobs", element: <Jobs /> },
       { path: "/jobs/:id", element: <JobDetail /> },
+      { path: "/login", element: <Login /> },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },

@@ -91,6 +91,7 @@ interface Worker {
   status: WorkerStatus;        // 必須
   headline: string;            // 任意（一行自己紹介）
   capabilities: Capability[];  // 1つ以上必須
+  ownerUserId?: string;        // Google sub（認証導入後は必須）
 }
 ```
 
@@ -124,8 +125,38 @@ interface Capability {
 | `createWorker(data)` | `(Omit<Worker, "id" \| "createdAt">) => Worker` |
 | `updateWorker(id, updates)` | `(id, Partial<Omit<Worker, "id" \| "createdAt">>) => Worker \| null` |
 | `deleteWorker(id)` | `(id: string) => void` |
+| `getWorkerByOwnerUserId(sub)` | `(sub: string) => Worker \| null` |
 
-## 5. Message（チャットメッセージ）
+## 5. Session（認証セッション）
+
+**定義**: `src/lib/auth.ts`
+**localStorage キー**: `boss-session`
+
+```typescript
+interface GoogleUser {
+  sub: string;                 // Google ユーザー ID
+  email: string;               // メールアドレス
+  name: string;                // 表示名
+  picture: string;             // プロフィール画像 URL
+}
+
+interface Session {
+  provider: "google";          // 認証プロバイダー（現在は Google のみ）
+  idToken: string;             // Google ID Token（未検証、デコード用のみ）
+  user: GoogleUser;            // デコード済みユーザー情報
+  createdAt: number;           // Date.now() — セッション作成日時
+}
+```
+
+### CRUD 関数
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
+| `loadSession()` | `() => Session \| null` | localStorage から読み込み |
+| `saveSession(session)` | `(Session) => void` | localStorage に保存 |
+| `clearSession()` | `() => void` | localStorage から削除 |
+| `decodeJwtPayload(token)` | `(string) => GoogleUser` | JWT ペイロード部を atob でデコード |
+
+## 6. Message（チャットメッセージ）
 
 **定義**: `src/types/brief.ts`
 ブリーフ作成のAIチャットUIで使用する discriminated union。
@@ -162,7 +193,7 @@ interface UserMessage {
 type Message = AiTextMessage | AiOptionsMessage | UserMessage;
 ```
 
-## 6. BriefStore（ブリーフ作成の永続化状態）
+## 7. BriefStore（ブリーフ作成の永続化状態）
 
 **localStorage キー**: `boss-brief-draft`
 
@@ -175,7 +206,7 @@ interface BriefStore {
 }
 ```
 
-## 7. 定数一覧
+## 8. 定数一覧
 
 ### PlatformTag
 `"TikTok"`, `"Reels"`, `"YouTube"`, `"Ads"`
@@ -189,7 +220,7 @@ interface BriefStore {
 ### タイムゾーン
 `"Asia/Tokyo"`, `"America/New_York"`, `"America/Los_Angeles"`, `"Europe/London"`, `"Europe/Berlin"`, `"Asia/Shanghai"`, `"Asia/Singapore"`
 
-## 8. 将来のスキーマ拡張（v1 計画）
+## 9. 将来のスキーマ拡張（v1 計画）
 
 ### Job への追加フィールド
 ```typescript
