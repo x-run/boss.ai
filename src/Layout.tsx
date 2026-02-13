@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router";
 const links = [
   { to: "/brief/new", label: "ブリーフ作成" },
   { to: "/jobs", label: "案件一覧" },
+  { to: "/workers", label: "ワーカー" },
   { to: "/workers/register", label: "ワーカー登録" },
 ] as const;
 

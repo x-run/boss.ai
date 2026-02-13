@@ -103,6 +103,9 @@ export default function Landing() {
             <button onClick={() => scrollTo(conceptEl)} className="nav-link text-[13px] bg-transparent border-none cursor-pointer">
               思想
             </button>
+            <Link to="/workers/new" className="nav-link text-[13px]">
+              編集者登録
+            </Link>
           </div>
         </div>
       </nav>
@@ -170,6 +173,12 @@ export default function Landing() {
               <Link to="/brief/new" className="cta">
                 <span className="relative z-10">ブリーフを作成する</span>
                 <svg className="relative z-10 w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link to="/workers/new" className="cta-ghost">
+                編集者として登録する
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
