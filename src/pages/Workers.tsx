@@ -70,7 +70,7 @@ export default function Workers() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <h1 className="text-[22px] sm:text-[26px] font-bold tracking-tight text-white">
-                Browse Editors
+                編集者
               </h1>
               <p className="text-[13px] text-neutral-500 mt-1">
                 {workers.length} editors registered
@@ -86,7 +86,7 @@ export default function Workers() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
-              Register
+              登録する
             </Link>
           </div>
         </div>
