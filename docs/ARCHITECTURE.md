@@ -74,8 +74,13 @@ createBrowserRouter
     ├── "/jobs"       → Jobs
     ├── "/jobs/:id"   → JobDetail
     ├── "/workers"    → Workers
-    ├── "/workers/new"→ WorkerNew
+    ├── "/workers/new"→ WorkerNew     [要認証]
     ├── "/workers/:id"→ WorkerDetail
+    ├── "/browse"     → WorkerBrowse  [要認証]
+    ├── "/clients"    → Clients       (依頼主向け説明)
+    ├── "/editors"    → Editors       (編集者向け説明)
+    ├── "/dashboard"  → Dashboard     [要認証]
+    ├── "/login"      → Login
     ├── "/workers/register" → WorkerRegister (レガシー)
     └── "*"           → Navigate to "/"
 ```
@@ -84,6 +89,16 @@ createBrowserRouter
 - LP は Layout の外。独自のナビ・スタイルを持つ
 - アプリ内ページは全て Layout でラップ（共通ナビ h-14）
 - ルートは浅く保つ。ネスト最大2階層
+
+### Public Routes / Auth-gated Routes
+
+| 種別 | ルート | 認証 | 説明 |
+|------|--------|------|------|
+| Public | `/`, `/workers`, `/jobs`, `/clients`, `/editors`, `/login` | 不要 | 誰でも閲覧可。デモ・営業導線 |
+| Auth-gated | `/workers/new`, `/browse`, `/dashboard` | 必要 | 未ログインは `/login` にリダイレクト |
+
+認証判定は `lib/auth.ts` の `loadSession()` で `boss-session` の有無をチェック。
+バックエンド未導入のため、クライアントサイドのみのガード（MVP）。
 
 ## 4. データフロー
 

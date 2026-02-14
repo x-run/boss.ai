@@ -91,7 +91,25 @@ interface Worker {
   status: WorkerStatus;        // 必須
   headline: string;            // 任意（一行自己紹介）
   capabilities: Capability[];  // 1つ以上必須
-  ownerUserId?: string;        // Google sub（認証導入後は必須）
+  authProvider?: string;       // 認証プロバイダー（"google" 等）
+  authProviderId?: string;     // プロバイダー側のユーザーID（Google sub）
+  avatarUrl?: string;          // プロフィール画像 URL or dataURL
+  bio?: string;                // 自己紹介文（複数行）
+  gender?: Gender;             // 性別
+  locationText?: string;       // 居住地（例: "沖縄"）
+  skills?: string[];           // ハッシュタグ風スキルタグ
+  socials?: Socials;           // SNS リンク
+  updatedAt?: string;          // ISO 8601 — 最終更新日時
+}
+
+type Gender = "male" | "female" | "other" | "na";
+
+interface Socials {
+  twitter?: string;
+  instagram?: string;
+  website?: string;
+  youtube?: string;
+  linkedin?: string;
 }
 ```
 
@@ -125,7 +143,8 @@ interface Capability {
 | `createWorker(data)` | `(Omit<Worker, "id" \| "createdAt">) => Worker` |
 | `updateWorker(id, updates)` | `(id, Partial<Omit<Worker, "id" \| "createdAt">>) => Worker \| null` |
 | `deleteWorker(id)` | `(id: string) => void` |
-| `getWorkerByOwnerUserId(sub)` | `(sub: string) => Worker \| null` |
+| `findWorkerByAuth(provider, providerId)` | `(string, string) => Worker \| null` |
+| `upsertWorkerByAuth(profile)` | `(AuthProfile) => Worker` |
 
 ## 5. Session（認証セッション）
 

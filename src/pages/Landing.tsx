@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
 import "../styles/landing.css";
+import WorkerCarousel from "../components/landing/WorkerCarousel";
+import { loadSession } from "../lib/auth";
 
 /* ================================================================
-   Helper: useInView — fires once when element is 50% visible
+   Helper: useInView — fires once when element enters viewport
    ================================================================ */
 
-function useInView(threshold = 0.5) {
+function useInView(threshold = 0.35) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -31,7 +33,7 @@ function useInView(threshold = 0.5) {
 }
 
 /* ================================================================
-   Landing Page
+   Landing Page — "Cinematic Command"
    ================================================================ */
 
 export default function Landing() {
@@ -39,6 +41,12 @@ export default function Landing() {
   const [loaded, setLoaded] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  /* ── auth check ── */
+  useEffect(() => {
+    setLoggedIn(!!loadSession());
+  }, []);
 
   /* ── section visibility ── */
   const workflow = useInView();
@@ -67,9 +75,12 @@ export default function Landing() {
   }, []);
 
   /* ── smooth scroll to anchor ── */
-  const scrollTo = useCallback((el: React.RefObject<HTMLElement | null>) => {
-    el.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  const scrollTo = useCallback(
+    (el: React.RefObject<HTMLElement | null>) => {
+      el.current?.scrollIntoView({ behavior: "smooth" });
+    },
+    [],
+  );
 
   const vis = heroReady ? "is-visible" : "";
 
@@ -78,7 +89,7 @@ export default function Landing() {
       {/* ── LOADER ── */}
       <div className={`lp-loader ${loaded ? "loaded" : ""}`}>
         <span className="loader-logo">
-          boss<span style={{ color: "#525252" }}>.ai</span>
+          BOSS<span style={{ color: "var(--text-dim)" }}>.AI</span>
         </span>
       </div>
 
@@ -86,57 +97,72 @@ export default function Landing() {
       <nav
         className={`lp-nav fixed top-0 w-full z-50 border-b border-transparent ${scrolled ? "is-scrolled" : ""}`}
       >
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link
             to="/"
-            className="text-lg font-extrabold tracking-tight leading-none no-underline text-white"
+            className="text-sm font-extrabold tracking-[0.05em] uppercase leading-none no-underline text-white"
+            style={{ fontFamily: "var(--font-display)" }}
           >
-            boss<span className="text-neutral-600">.ai</span>
+            BOSS<span className="text-[var(--text-dim)]">.AI</span>
           </Link>
-          <div className="flex items-center gap-8">
-            <button onClick={() => scrollTo(workflowEl)} className="nav-link text-[13px] bg-transparent border-none cursor-pointer">
-              仕組み
-            </button>
-            <button onClick={() => scrollTo(problemEl)} className="nav-link text-[13px] bg-transparent border-none cursor-pointer">
-              課題
-            </button>
-            <button onClick={() => scrollTo(conceptEl)} className="nav-link text-[13px] bg-transparent border-none cursor-pointer">
-              思想
-            </button>
-            <Link to="/login" className="nav-link text-[13px]">
-              編集者登録
+          <div className="flex items-center gap-5 md:gap-7">
+            <Link to="/workers" className="nav-link hidden sm:inline">
+              探す
+            </Link>
+            <Link to="/jobs" className="nav-link hidden sm:inline">
+              仕事一覧
+            </Link>
+            <Link to="/clients" className="nav-link hidden md:inline">
+              仕事を依頼する
+            </Link>
+            <Link to="/editors" className="nav-link hidden md:inline">
+              編集者向け
+            </Link>
+            <Link
+              to={loggedIn ? "/app/dashboard" : "/login"}
+              className="nav-cta"
+            >
+              {loggedIn ? "ダッシュボード" : "登録 / ログイン"}
             </Link>
           </div>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden bg-dots">
-        {/* Ambient orbs */}
-        <div className="orb orb--emerald" aria-hidden="true" />
-        <div className="orb orb--blue" aria-hidden="true" />
-        <div className="orb orb--violet" aria-hidden="true" />
+      <section className="hero-grid px-6 md:px-10 pt-16 relative">
+        {/* Gradient mesh background */}
+        <div className="hero-mesh" aria-hidden="true" />
 
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
+        {/* Vertical side text */}
+        <div className="hero-vertical" aria-hidden="true">
+          DIRECT
+        </div>
+
+        {/* Main content — left aligned */}
+        <div className="relative z-10 flex flex-col justify-center max-w-[1280px] mx-auto w-full py-32 md:py-0">
           {/* Badge */}
           <div className="reveal-line mb-10">
-            <div className={`reveal-text reveal-d1 inline-block ${vis}`}>
-              <span className="inline-flex items-center gap-3 text-[11px] font-medium tracking-[0.15em] uppercase text-neutral-400 border border-white/[0.07] rounded-full px-5 py-2 bg-white/[0.02]">
-                <span className="status-dot relative w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+            <div className={`reveal-text reveal-d1 ${vis}`}>
+              <span className="hero-badge">
+                <span className="badge-dot" />
                 動画制作の構造を変える
               </span>
             </div>
           </div>
 
           {/* Headline */}
-          <h1 className="mb-8">
+          <h1 className="hero-headline mb-8">
             <span className="reveal-line">
-              <span className={`reveal-text reveal-d2 hero-headline-gradient text-[clamp(2.8rem,8vw,6rem)] font-black leading-[1.05] tracking-tight ${vis}`}>
+              <span
+                className={`reveal-text reveal-d2 hero-headline-accent ${vis}`}
+              >
                 AIが雇い、
               </span>
             </span>
             <span className="reveal-line">
-              <span className={`reveal-text reveal-d3 text-[clamp(2.8rem,8vw,6rem)] font-black leading-[1.05] tracking-tight text-white ${vis}`}>
+              <span
+                className={`reveal-text reveal-d3 hero-headline-white ${vis}`}
+              >
                 人間が
                 <span className="slot">
                   <span className="slot-track">
@@ -153,39 +179,74 @@ export default function Landing() {
 
           {/* Subcopy */}
           <div className="reveal-line mb-3">
-            <p className={`reveal-text reveal-d4 text-base sm:text-lg md:text-xl text-neutral-400 leading-[1.85] max-w-2xl mx-auto ${vis}`}>
+            <p className={`reveal-text reveal-d4 hero-sub ${vis}`}>
               依頼主はAIと要件を固め、AIがクリエイターに発注し一次評価。
               <br className="hidden sm:block" />
               依頼主が最終確認するだけで、動画が届く。
             </p>
           </div>
 
-          {/* English tagline */}
-          <div className="reveal-line mb-12">
-            <p className={`reveal-text reveal-d5 text-sm text-neutral-700 font-mono tracking-wide ${vis}`}>
+          {/* Tagline */}
+          <div className="reveal-line mb-14">
+            <p className={`reveal-text reveal-d5 hero-tagline ${vis}`}>
               AI directs. Humans craft. You approve.
             </p>
           </div>
 
           {/* CTAs */}
           <div className="reveal-line">
-            <div className={`reveal-text reveal-d6 flex flex-col sm:flex-row items-center justify-center gap-4 ${vis}`}>
-              <Link to="/brief/new" className="cta">
+            <div
+              className={`reveal-text reveal-d6 flex flex-col sm:flex-row items-start gap-4 ${vis}`}
+            >
+              <Link to="/brief/new" className="cta-primary">
                 <span className="relative z-10">ブリーフを作成する</span>
-                <svg className="relative z-10 w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                <svg
+                  className="relative z-10 w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </Link>
               <Link to="/login" className="cta-ghost">
                 編集者として登録する
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </Link>
-              <button onClick={() => scrollTo(workflowEl)} className="cta-ghost">
+              <button
+                onClick={() => scrollTo(workflowEl)}
+                className="cta-ghost"
+              >
                 仕組みを見る
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
             </div>
@@ -193,249 +254,320 @@ export default function Landing() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
           <div className="scroll-indicator" />
         </div>
       </section>
 
-      <div className="lp-divider max-w-6xl mx-auto" />
+      <div className="lp-divider max-w-[1280px] mx-auto" />
 
       {/* ── WORKFLOW ── */}
-      <section ref={workflowEl} className="py-28 sm:py-40 px-6 relative">
-        <div ref={workflow.ref} className="max-w-6xl mx-auto">
+      <section
+        ref={workflowEl}
+        className="py-28 sm:py-40 px-6 md:px-10 relative"
+      >
+        <div ref={workflow.ref} className="max-w-[1280px] mx-auto">
           {/* Header */}
-          <div className={`text-center mb-20 sr ${workflow.visible ? "is-visible" : ""}`}>
-            <p className="mono-label text-emerald-500/60 mb-5">Workflow</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6">
-              4ステップで、<span className="text-neutral-400">自律的に回る。</span>
+          <div
+            className={`mb-20 sr ${workflow.visible ? "is-visible" : ""}`}
+          >
+            <p className="mono-label mb-5" style={{ color: "var(--accent-dim)" }}>
+              Process
+            </p>
+            <h2 className="section-header mb-6">
+              4ステップで、
+              <span style={{ color: "var(--text-muted)" }}>自律的に回る。</span>
             </h2>
-            <p className="text-neutral-500 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+            <p
+              className="text-sm md:text-base max-w-lg leading-relaxed"
+              style={{ color: "var(--text-muted)" }}
+            >
               発注から納品まで。AIがプロジェクトを統括し、人間が品質を仕上げる。
             </p>
           </div>
 
-          {/* Flow: 4 steps + 3 connectors */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_48px_1fr_48px_1fr_48px_1fr] gap-3 md:gap-0 max-w-5xl mx-auto items-stretch sr-stagger">
-            {/* Step 1: AI — 企画 */}
-            <div className={`sr ${workflow.visible ? "is-visible" : ""}`}>
-              <div className="glass glass--ai rounded-2xl p-6 h-full">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="step-num step-num--ai">01</span>
-                  <span className="step-label text-emerald-500/50">AI Director</span>
-                </div>
-                <h3 className="text-[17px] font-semibold mb-2">企画・分解</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75]">
-                  依頼を分析し、構成・シーン・テロップを自動設計。タスクを生成し最適なクリエイターを選定。
-                </p>
-              </div>
+          {/* Timeline */}
+          <div className="workflow-timeline sr-stagger">
+            {/* Pulse animation line */}
+            <div className="workflow-pulse" aria-hidden="true" />
+
+            {/* Step 1 */}
+            <div
+              className={`workflow-step sr ${workflow.visible ? "is-visible" : ""}`}
+            >
+              <div className="workflow-num">01</div>
+              <span className="workflow-role workflow-role--ai">
+                AI Director
+              </span>
+              <h3 className="workflow-title">企画・分解</h3>
+              <p className="workflow-desc">
+                依頼を分析し、構成・シーン・テロップを自動設計。タスクを生成し最適なクリエイターを選定。
+              </p>
             </div>
 
-            {/* Connector 1→2 */}
-            <div className={`flow-connector sr ${workflow.visible ? "is-visible" : ""}`} />
-
-            {/* Step 2: Human — 編集 */}
-            <div className={`sr ${workflow.visible ? "is-visible" : ""}`}>
-              <div className="glass glass--human rounded-2xl p-6 h-full">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="step-num step-num--human">02</span>
-                  <span className="step-label text-blue-500/50">Human Editor</span>
-                </div>
-                <h3 className="text-[17px] font-semibold mb-2">編集・調整</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75]">
-                  人間のクリエイターがカット編集、色補正、音声調整など品質に関わる領域を磨き上げる。
-                </p>
-              </div>
+            {/* Step 2 */}
+            <div
+              className={`workflow-step sr ${workflow.visible ? "is-visible" : ""}`}
+            >
+              <div className="workflow-num">02</div>
+              <span className="workflow-role workflow-role--human">
+                Human Editor
+              </span>
+              <h3 className="workflow-title">編集・調整</h3>
+              <p className="workflow-desc">
+                人間のクリエイターがカット編集、色補正、音声調整など品質に関わる領域を磨き上げる。
+              </p>
             </div>
 
-            {/* Connector 2→3 */}
-            <div className={`flow-connector sr ${workflow.visible ? "is-visible" : ""}`} />
-
-            {/* Step 3: AI — 検品 */}
-            <div className={`sr ${workflow.visible ? "is-visible" : ""}`}>
-              <div className="glass glass--ai rounded-2xl p-6 h-full">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="step-num step-num--ai">03</span>
-                  <span className="step-label text-emerald-500/50">AI Review</span>
-                </div>
-                <h3 className="text-[17px] font-semibold mb-2">検品・一次評価</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75]">
-                  完成物をAIが品質チェック。ガイドラインとの整合性を検証し、修正点を自動フィードバック。
-                </p>
-              </div>
+            {/* Step 3 */}
+            <div
+              className={`workflow-step sr ${workflow.visible ? "is-visible" : ""}`}
+            >
+              <div className="workflow-num">03</div>
+              <span className="workflow-role workflow-role--ai">
+                AI Review
+              </span>
+              <h3 className="workflow-title">検品・一次評価</h3>
+              <p className="workflow-desc">
+                完成物をAIが品質チェック。ガイドラインとの整合性を検証し、修正点を自動フィードバック。
+              </p>
             </div>
 
-            {/* Connector 3→4 */}
-            <div className={`flow-connector sr ${workflow.visible ? "is-visible" : ""}`} />
-
-            {/* Step 4: Client — 納品 */}
-            <div className={`sr ${workflow.visible ? "is-visible" : ""}`}>
-              <div className="glass glass--client rounded-2xl p-6 h-full">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="step-num step-num--client">04</span>
-                  <span className="step-label text-amber-500/50">Client</span>
-                </div>
-                <h3 className="text-[17px] font-semibold mb-2">最終確認・納品</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75]">
-                  依頼主が最終確認し承認。修正があればAIが即座にタスクを再分解し、サイクルを回す。
-                </p>
-              </div>
+            {/* Step 4 */}
+            <div
+              className={`workflow-step sr ${workflow.visible ? "is-visible" : ""}`}
+            >
+              <div className="workflow-num">04</div>
+              <span className="workflow-role workflow-role--client">
+                Client
+              </span>
+              <h3 className="workflow-title">最終確認・納品</h3>
+              <p className="workflow-desc">
+                依頼主が最終確認し承認。修正があればAIが即座にタスクを再分解し、サイクルを回す。
+              </p>
             </div>
           </div>
 
           {/* Flow summary */}
           <div
-            className={`mt-16 text-center sr ${workflow.visible ? "is-visible" : ""}`}
-            style={{ transitionDelay: ".35s" }}
+            className={`mt-20 text-center sr ${workflow.visible ? "is-visible" : ""}`}
+            style={{ transitionDelay: ".4s" }}
           >
-            <div className="flow-pill text-sm">
-              <span className="font-semibold text-emerald-400">AI</span>
-              <svg className="w-3.5 h-3.5 text-neutral-700" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              <span className="font-semibold text-blue-400">人間</span>
-              <svg className="w-3.5 h-3.5 text-neutral-700" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              <span className="font-semibold text-emerald-400">AI</span>
-              <svg className="w-3.5 h-3.5 text-neutral-700" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              <span className="font-semibold text-amber-400">依頼主</span>
+            <div className="flow-pill">
+              <span style={{ color: "var(--accent)" }}>AI</span>
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                viewBox="0 0 24 24"
+                style={{ color: "var(--text-dim)" }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+              <span style={{ color: "var(--text)" }}>人間</span>
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                viewBox="0 0 24 24"
+                style={{ color: "var(--text-dim)" }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+              <span style={{ color: "var(--accent)" }}>AI</span>
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                viewBox="0 0 24 24"
+                style={{ color: "var(--text-dim)" }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+              <span style={{ color: "#FFC857" }}>依頼主</span>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="lp-divider max-w-6xl mx-auto" />
+      <div className="lp-divider max-w-[1280px] mx-auto" />
+
+      {/* ── EDITORS CAROUSEL ── */}
+      <WorkerCarousel />
+
+      <div className="lp-divider max-w-[1280px] mx-auto" />
 
       {/* ── PROBLEM → SOLUTION ── */}
-      <section ref={problemEl} className="py-28 sm:py-40 px-6">
-        <div ref={problem.ref} className="max-w-6xl mx-auto">
+      <section
+        ref={problemEl}
+        className="py-28 sm:py-40 px-6 md:px-10"
+      >
+        <div ref={problem.ref} className="max-w-[1280px] mx-auto">
           {/* Header */}
-          <div className={`text-center mb-20 sr ${problem.visible ? "is-visible" : ""}`}>
-            <p className="mono-label text-red-400/50 mb-5">Problem &amp; Solution</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6">
-              構造で、<span className="text-neutral-400">課題を解く。</span>
+          <div
+            className={`mb-20 sr ${problem.visible ? "is-visible" : ""}`}
+          >
+            <p className="mono-label mb-5" style={{ color: "rgba(255, 59, 59, 0.5)" }}>
+              Problem &amp; Solution
+            </p>
+            <h2 className="section-header mb-6">
+              構造で、
+              <span style={{ color: "var(--text-muted)" }}>課題を解く。</span>
             </h2>
           </div>
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-5xl mx-auto sr-stagger">
-            {/* Card 1 */}
-            <div className={`sr ${problem.visible ? "is-visible" : ""}`}>
-              <div className="glass rounded-2xl p-7 h-full">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <span className="ps-icon ps-icon--problem">
-                    <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </span>
-                  <span className="mono-label text-red-400/50" style={{ fontSize: 10 }}>Problem</span>
-                </div>
-                <h3 className="text-[15px] font-semibold mb-2 text-red-300/80">ディレクションに時間が消える</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75] mb-6">
-                  クリエイター選定、指示書作成、進捗管理。動画の中身より「管理業務」にリソースが取られる。
-                </p>
-                <div className="ps-divider mb-6" />
-                <div className="flex items-center gap-2.5 mb-4">
-                  <span className="ps-icon ps-icon--solve">
-                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  </span>
-                  <span className="mono-label text-emerald-500/50" style={{ fontSize: 10 }}>Solution</span>
-                </div>
-                <p className="text-[13px] text-neutral-300 leading-[1.75]">
-                  AIが要件定義からタスク分解、人材アサインまでを自動化。依頼主は「確認するだけ」に。
-                </p>
-              </div>
+          {/* Problem / Solution pairs */}
+          <div className="ps-grid sr-stagger">
+            {/* Pair 1 */}
+            <div
+              className={`ps-card ps-card--problem sr-clip ${problem.visible ? "is-visible" : ""}`}
+            >
+              <p className="ps-label">Problem</p>
+              <h3 className="ps-title">ディレクションに時間が消える</h3>
+              <p className="ps-body">
+                クリエイター選定、指示書作成、進捗管理。動画の中身より「管理業務」にリソースが取られる。
+              </p>
+            </div>
+            <div
+              className={`ps-card ps-card--solution sr-clip ${problem.visible ? "is-visible" : ""}`}
+            >
+              <p className="ps-label">Solution</p>
+              <h3 className="ps-title">AIが管理を自動化</h3>
+              <p className="ps-body">
+                AIが要件定義からタスク分解、人材アサインまでを自動化。依頼主は「確認するだけ」に。
+              </p>
             </div>
 
-            {/* Card 2 */}
-            <div className={`sr ${problem.visible ? "is-visible" : ""}`}>
-              <div className="glass rounded-2xl p-7 h-full">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <span className="ps-icon ps-icon--problem">
-                    <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </span>
-                  <span className="mono-label text-red-400/50" style={{ fontSize: 10 }}>Problem</span>
-                </div>
-                <h3 className="text-[15px] font-semibold mb-2 text-red-300/80">品質がばらつく</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75] mb-6">
-                  担当者の力量次第でアウトプットが変わる。AI単体では「最後の1%」が仕上がらない。
-                </p>
-                <div className="ps-divider mb-6" />
-                <div className="flex items-center gap-2.5 mb-4">
-                  <span className="ps-icon ps-icon--solve">
-                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  </span>
-                  <span className="mono-label text-emerald-500/50" style={{ fontSize: 10 }}>Solution</span>
-                </div>
-                <p className="text-[13px] text-neutral-300 leading-[1.75]">
-                  AIが一次品質を担保し、人間の職人が仕上げる二重構造。属人性を排除しつつ、クオリティを維持。
-                </p>
-              </div>
+            <div className="ps-row-divider" />
+
+            {/* Pair 2 */}
+            <div
+              className={`ps-card ps-card--problem sr-clip ${problem.visible ? "is-visible" : ""}`}
+            >
+              <p className="ps-label">Problem</p>
+              <h3 className="ps-title">品質がばらつく</h3>
+              <p className="ps-body">
+                担当者の力量次第でアウトプットが変わる。AI単体では「最後の1%」が仕上がらない。
+              </p>
+            </div>
+            <div
+              className={`ps-card ps-card--solution sr-clip ${problem.visible ? "is-visible" : ""}`}
+            >
+              <p className="ps-label">Solution</p>
+              <h3 className="ps-title">二重構造で品質担保</h3>
+              <p className="ps-body">
+                AIが一次品質を担保し、人間の職人が仕上げる二重構造。属人性を排除しつつ、クオリティを維持。
+              </p>
             </div>
 
-            {/* Card 3 */}
-            <div className={`sr ${problem.visible ? "is-visible" : ""}`}>
-              <div className="glass rounded-2xl p-7 h-full">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <span className="ps-icon ps-icon--problem">
-                    <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </span>
-                  <span className="mono-label text-red-400/50" style={{ fontSize: 10 }}>Problem</span>
-                </div>
-                <h3 className="text-[15px] font-semibold mb-2 text-red-300/80">本数が増えるとスケールしない</h3>
-                <p className="text-[13px] text-neutral-500 leading-[1.75] mb-6">
-                  人に依存する制作フローは、本数に比例してコストが線形に膨らむ。
-                </p>
-                <div className="ps-divider mb-6" />
-                <div className="flex items-center gap-2.5 mb-4">
-                  <span className="ps-icon ps-icon--solve">
-                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  </span>
-                  <span className="mono-label text-emerald-500/50" style={{ fontSize: 10 }}>Solution</span>
-                </div>
-                <p className="text-[13px] text-neutral-300 leading-[1.75]">
-                  AIが並列でプロジェクトを統括。10本でも100本でも、管理コストはほぼ一定。仕組みで解く。
-                </p>
-              </div>
+            <div className="ps-row-divider" />
+
+            {/* Pair 3 */}
+            <div
+              className={`ps-card ps-card--problem sr-clip ${problem.visible ? "is-visible" : ""}`}
+            >
+              <p className="ps-label">Problem</p>
+              <h3 className="ps-title">本数が増えるとスケールしない</h3>
+              <p className="ps-body">
+                人に依存する制作フローは、本数に比例してコストが線形に膨らむ。
+              </p>
+            </div>
+            <div
+              className={`ps-card ps-card--solution sr-clip ${problem.visible ? "is-visible" : ""}`}
+            >
+              <p className="ps-label">Solution</p>
+              <h3 className="ps-title">仕組みでスケール</h3>
+              <p className="ps-body">
+                AIが並列でプロジェクトを統括。10本でも100本でも、管理コストはほぼ一定。仕組みで解く。
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="lp-divider max-w-6xl mx-auto" />
+      <div className="lp-divider max-w-[1280px] mx-auto" />
 
       {/* ── CONCEPT ── */}
-      <section ref={conceptEl} className="py-28 sm:py-40 px-6 relative overflow-hidden">
+      <section
+        ref={conceptEl}
+        className="py-28 sm:py-40 px-6 md:px-10 relative overflow-hidden"
+      >
         <div className="concept-glow" aria-hidden="true" />
 
-        <div ref={concept.ref} className="relative z-10 max-w-4xl mx-auto text-center">
+        <div
+          ref={concept.ref}
+          className="relative z-10 max-w-[1280px] mx-auto"
+        >
           <div className={`sr ${concept.visible ? "is-visible" : ""}`}>
-            <p className="mono-label text-purple-400/50 mb-14">Concept</p>
-            <blockquote className="concept-quote mb-10">
-              <span className="text-white">AIが、ボスになる。</span>
+            <p
+              className="mono-label mb-16"
+              style={{ color: "var(--accent-dim)" }}
+            >
+              Vision
+            </p>
+            <blockquote className="concept-quote mb-12">
+              <span style={{ color: "var(--text)" }}>AIが、ボスになる。</span>
               <br />
-              <span className="text-neutral-400">人間は、職人になる。</span>
+              <span style={{ color: "var(--text-muted)" }}>
+                人間は、職人になる。
+              </span>
             </blockquote>
           </div>
 
           <div
             className={`sr ${concept.visible ? "is-visible" : ""}`}
-            style={{ transitionDelay: ".12s" }}
+            style={{ transitionDelay: ".15s" }}
           >
-            <p className="text-neutral-400 text-base sm:text-lg leading-[1.9] max-w-2xl mx-auto mb-16">
+            <p
+              className="text-base sm:text-lg leading-[2] max-w-2xl mb-20"
+              style={{ color: "var(--text-muted)" }}
+            >
               プロジェクト管理、タスク分解、品質管理はAIが担う。
               <br />
               人間は、クリエイティブという
-              <span className="text-neutral-200 font-medium">「最も人間的な仕事」</span>
+              <span
+                className="font-medium"
+                style={{ color: "var(--text)" }}
+              >
+                「最も人間的な仕事」
+              </span>
               に集中する。
             </p>
           </div>
 
           <div
             className={`sr ${concept.visible ? "is-visible" : ""}`}
-            style={{ transitionDelay: ".24s" }}
+            style={{ transitionDelay: ".3s" }}
           >
-            <div className="definition-box px-8 sm:px-12 py-7 max-w-lg mx-auto">
-              <p className="mono-label text-neutral-600 mb-3" style={{ fontSize: 10 }}>
+            <div className="definition-box max-w-lg">
+              <p className="mono-label mb-3" style={{ color: "var(--text-dim)" }}>
                 Definition
               </p>
-              <p className="text-[15px] sm:text-base text-neutral-300 leading-[1.75] font-medium">
-                <span className="text-white font-bold">boss.ai</span>
-                <span className="text-neutral-600 mx-1">=</span>
+              <p
+                className="text-[15px] sm:text-base leading-[1.8] font-medium"
+                style={{ color: "var(--text-muted)" }}
+              >
+                <span className="font-bold" style={{ color: "var(--text)" }}>
+                  boss.ai
+                </span>
+                <span className="mx-2" style={{ color: "var(--text-dim)" }}>
+                  =
+                </span>
                 AIがディレクションし、人間がクラフトする動画制作プラットフォーム
               </p>
             </div>
@@ -443,15 +575,18 @@ export default function Landing() {
         </div>
       </section>
 
-      <div className="lp-divider max-w-6xl mx-auto" />
+      <div className="lp-divider max-w-[1280px] mx-auto" />
 
       {/* ── FOOTER ── */}
-      <footer className="py-14 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm font-extrabold tracking-tight">
-            boss<span className="text-neutral-700">.ai</span>
+      <footer className="lp-footer py-16 px-6 md:px-10">
+        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="lp-footer-logo">
+            BOSS<span style={{ color: "var(--text-dim)" }}>.AI</span>
           </span>
-          <span className="text-xs text-neutral-800">
+          <span
+            className="text-xs"
+            style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}
+          >
             &copy; 2025 boss.ai &mdash; All rights reserved.
           </span>
         </div>

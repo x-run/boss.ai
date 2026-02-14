@@ -17,6 +17,16 @@ export interface Capability {
   portfolioUrls: string[];
 }
 
+export type Gender = "male" | "female" | "other" | "na";
+
+export interface Socials {
+  twitter?: string;
+  instagram?: string;
+  website?: string;
+  youtube?: string;
+  linkedin?: string;
+}
+
 export interface Worker {
   id: string;
   createdAt: number;
@@ -25,7 +35,15 @@ export interface Worker {
   status: WorkerStatus;
   headline: string;
   capabilities: Capability[];
-  ownerUserId?: string;
+  authProvider?: string;
+  authProviderId?: string;
+  avatarUrl?: string;
+  bio?: string;
+  gender?: Gender;
+  locationText?: string;
+  skills?: string[];
+  socials?: Socials;
+  updatedAt?: string;
 }
 
 /* ── Constants ── */
@@ -90,8 +108,35 @@ export function getWorker(id: string): Worker | null {
   return getAllWorkers().find((w) => w.id === id) ?? null;
 }
 
-export function getWorkerByOwnerUserId(sub: string): Worker | null {
-  return getAllWorkers().find((w) => w.ownerUserId === sub) ?? null;
+export function findWorkerByAuth(provider: string, providerId: string): Worker | null {
+  return (
+    getAllWorkers().find(
+      (w) => w.authProvider === provider && w.authProviderId === providerId,
+    ) ?? null
+  );
+}
+
+export interface AuthProfile {
+  providerId: string;
+  displayName: string;
+  avatarUrl: string;
+  email?: string;
+}
+
+export function upsertWorkerByAuth(profile: AuthProfile): Worker {
+  const existing = findWorkerByAuth("google", profile.providerId);
+  if (existing) return existing;
+
+  return createWorker({
+    name: profile.displayName,
+    timezone: "Asia/Tokyo",
+    status: "available",
+    headline: "",
+    capabilities: [],
+    authProvider: "google",
+    authProviderId: profile.providerId,
+    avatarUrl: profile.avatarUrl,
+  });
 }
 
 export function createWorker(

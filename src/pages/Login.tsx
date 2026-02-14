@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { loadSession, saveSession, decodeJwtPayload } from "../lib/auth";
-import { getWorkerByOwnerUserId } from "../lib/workers";
+import { upsertWorkerByAuth } from "../lib/workers";
 import { initializeAndRenderButton } from "../lib/googleIdentity";
 
 export default function Login() {
@@ -10,16 +10,17 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  /* ── Already logged in? Redirect ── */
+  /* ── Already logged in? Redirect to dashboard ── */
   useEffect(() => {
     const session = loadSession();
     if (session) {
-      const existing = getWorkerByOwnerUserId(session.user.sub);
-      if (existing) {
-        nav(`/workers/${existing.id}`, { replace: true });
-      } else {
-        nav("/workers/new", { replace: true });
-      }
+      upsertWorkerByAuth({
+        providerId: session.user.sub,
+        displayName: session.user.name,
+        avatarUrl: session.user.picture,
+        email: session.user.email,
+      });
+      nav("/app/dashboard", { replace: true });
       return;
     }
     setLoading(false);
@@ -41,12 +42,13 @@ export default function Login() {
           createdAt: Date.now(),
         });
 
-        const existing = getWorkerByOwnerUserId(user.sub);
-        if (existing) {
-          nav(`/workers/${existing.id}`, { replace: true });
-        } else {
-          nav("/workers/new", { replace: true });
-        }
+        upsertWorkerByAuth({
+          providerId: user.sub,
+          displayName: user.name,
+          avatarUrl: user.picture,
+          email: user.email,
+        });
+        nav("/app/dashboard", { replace: true });
       } catch {
         setError("認証に失敗しました。もう一度お試しください。");
       }

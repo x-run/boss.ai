@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import {
   createWorker,
   checkWorkerReadiness,
-  getWorkerByOwnerUserId,
+  findWorkerByAuth,
   PLATFORMS,
   TOOLS,
   STRENGTHS,
@@ -173,7 +173,7 @@ export default function WorkerNew() {
       nav("/login", { replace: true });
       return;
     }
-    const existing = getWorkerByOwnerUserId(session.user.sub);
+    const existing = findWorkerByAuth("google", session.user.sub);
     if (existing) {
       nav(`/workers/${existing.id}`, { replace: true });
       return;
@@ -220,7 +220,9 @@ export default function WorkerNew() {
           portfolioUrls: form.portfolioUrls,
         },
       ],
-      ownerUserId: session?.user.sub,
+      authProvider: "google",
+      authProviderId: session?.user.sub,
+      avatarUrl: session?.user.picture,
     });
     setToast(true);
     setTimeout(() => nav("/workers"), 1200);

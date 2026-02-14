@@ -4,6 +4,7 @@ const links = [
   { to: "/brief/new", label: "ブリーフ作成" },
   { to: "/jobs", label: "案件一覧" },
   { to: "/workers", label: "ワーカー" },
+  { to: "/browse", label: "編集者を探す" },
   { to: "/login", label: "ワーカー登録" },
 ] as const;
 
